@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException
 
 from app.schemas import PredictionRequest
 from app.utils import build_dataframe, get_shap_explanation
-from app.ai_response import generate_ai_explanation
+from app.llm_response import generate_ai_explanation
 
 app = FastAPI(
     title="Pre-Delinquency Prediction API",
