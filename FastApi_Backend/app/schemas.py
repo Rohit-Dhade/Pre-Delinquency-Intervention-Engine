@@ -53,3 +53,7 @@ class PredictionRequest(BaseModel):
     quarter: float
     month_sin: float
     month_cos: float
+
+class FeaturePredictionRequest(BaseModel):
+    customer_id: str = Field(..., description="The customer ID to fetch features for from the Feature Store.")
+    date: Optional[str] = None

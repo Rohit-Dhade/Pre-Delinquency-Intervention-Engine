@@ -1,0 +1,101 @@
+
+B
+"
+__dummy"
+__dummy_idJdelinquency
+¹“Ğ¸’ˆê¹“Ğ¸’ˆê
+S
+3
+customerBank customer"customer_idJdelinquency
+¹“Ğø¬”ê¹“Ğø¬”ê1"$88cbd840-c9d7-4dec-9d10-5b94e391bdf2*Á“Ğè¨áÖ2°	
+ó
+customer_features_viewdelinquencycustomer"
+credit_score"
+emi_to_income_ratio"
+salary_delay_days"
+savings_decline_pct"
+income_drop_pct"
+credit_utilization_ratio"
+failed_autodebit_count"
+missed_payments_last_6m"
+utility_payment_delay_days" 
+discretionary_spend_drop_pct"
+gambling_spend_increase_pct"
+balance_volatility_30d"
+atm_withdrawal_increase_pct"
+atm_withdrawal_count_30d"
+upi_lending_app_txn_count" 
+recent_failed_autodebit_flag"
+savings_decline_trend"
+risk_momentum_score"
+emi_credit_stress"
+liquidity_stress"
+payment_failure_severity"
+behavioral_risk_score"
+volatility_liquidity_risk"
+composite_stress_index"	
+month"
+quarter"
+	month_sin"
+	month_cos"
+customer_segment_salaried""
+customer_segment_self_employed"
+geography_rural"
+geography_tier2"
+risk_cohort_moderate"
+risk_cohort_stable2€Æ
+:¯event_timestamp*
+created_atZ data/customer_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢customer_features_source’¹“Ğ°ßÍÔ"¹“Ğ€½òé@b
+customer_id’latest8
+¹“Ğˆ× êÁ“ĞÀ±Ö
+ºÍ’Ğè†•º“Ğ¾šR˜
+•
+,feast.infra.online_stores.sqlite.SqliteTable"e
+?/home/rohit/Desktop/Delinquency/feast_repo/data/online_store.db"delinquency_customer_features_viewb½event_timestamp*
+created_atZ data/customer_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢customer_features_sourceªdelinquency’¹“Ğ°ßÍÔ"¹“Ğ€½òéŠ-
+
+delinquency
+¹“Ğğô«Ö¹“Ğğô«Ö’
+
+ş	
+customer_features_viewdelinquency"feature_view*”	
+ó
+customer_features_viewdelinquencycustomer"
+credit_score"
+emi_to_income_ratio"
+salary_delay_days"
+savings_decline_pct"
+income_drop_pct"
+credit_utilization_ratio"
+failed_autodebit_count"
+missed_payments_last_6m"
+utility_payment_delay_days" 
+discretionary_spend_drop_pct"
+gambling_spend_increase_pct"
+balance_volatility_30d"
+atm_withdrawal_increase_pct"
+atm_withdrawal_count_30d"
+upi_lending_app_txn_count" 
+recent_failed_autodebit_flag"
+savings_decline_trend"
+risk_momentum_score"
+emi_credit_stress"
+liquidity_stress"
+payment_failure_severity"
+behavioral_risk_score"
+volatility_liquidity_risk"
+composite_stress_index"	
+month"
+quarter"
+	month_sin"
+	month_cos"
+customer_segment_salaried""
+customer_segment_self_employed"
+geography_rural"
+geography_tier2"
+risk_cohort_moderate"
+risk_cohort_stable2€Æ
+:¯event_timestamp*
+created_atZ data/customer_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢customer_features_source’¹“Ğ°ßÍÔ"¹“Ğ€½òé@b
+customer_id’latest
+¹“Ğˆ× ê¹“Ğˆ× ê2¹“Ğˆø’ëB$adc41076-f12b-4e3f-881a-d677138ec87a
