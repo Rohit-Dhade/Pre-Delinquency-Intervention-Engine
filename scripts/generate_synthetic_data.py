@@ -94,6 +94,19 @@ def generate_customers(n: int) -> pd.DataFrame:
         geography = random.choices(GEOGRAPHIES, weights=[0.45, 0.35, 0.20])[0]
         credit_score = int(np.clip(rng.normal(700, 80), 300, 900))
         created_at = random_datetime(date(2020, 1, 1), START_DATE)
+        
+        phone_number = f"+91{int(rng.integers(6000000000, 10000000000))}"
+        email = f"{name.lower().replace(' ', '.')}@example.com"
+        account_number = f"{int(rng.integers(10000000000, 100000000000))}"
+        ifsc_code = f"HDFC0{int(rng.integers(100000, 1000000))}"
+        
+        if cid == "CUST_0001":
+            email = "rohitdhade99@gmail.com"
+        elif cid == "CUST_0002":
+            email = "kartikbhangale20@gmail.com"
+        elif cid == "CUST_0003":
+            email = "bhaveshgirase27@gmail.com"
+            
         rows.append({
             "customer_id": cid,
             "name": name,
@@ -101,6 +114,10 @@ def generate_customers(n: int) -> pd.DataFrame:
             "segment": segment,
             "geography": geography,
             "credit_score": credit_score,
+            "phone_number": phone_number,
+            "email": email,
+            "account_number": account_number,
+            "ifsc_code": ifsc_code,
             "created_at": created_at,
         })
     return pd.DataFrame(rows)

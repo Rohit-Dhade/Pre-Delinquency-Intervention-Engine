@@ -11,6 +11,10 @@ CREATE TABLE IF NOT EXISTS customers (
     segment         VARCHAR(30)  NOT NULL,         -- salaried / self_employed
     geography       VARCHAR(20)  NOT NULL,         -- rural / tier2 / urban
     credit_score    INTEGER      NOT NULL,         -- 300–900
+    phone_number    VARCHAR(20),
+    email           VARCHAR(100),
+    account_number  VARCHAR(20),
+    ifsc_code       VARCHAR(20),
     created_at      TIMESTAMP    DEFAULT NOW()
 );
 
