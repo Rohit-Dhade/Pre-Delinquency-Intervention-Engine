@@ -134,10 +134,25 @@ async def simulate_traffic(background_tasks: BackgroundTasks):
     Trigger the traffic simulation script in the background.
     """
     def run_script():
-        script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts", "simulate_live_traffic.py")
-        # Run it using the current environment's Python executable
+        base_dir = os.path.dirname(os.path.dirname(__file__))
+        simulate_path = os.path.join(base_dir, "scripts", "simulate_live_traffic.py")
+        feature_sql_path = os.path.join(base_dir, "scripts", "run_feature_sql.py")
+        materialize_path = os.path.join(base_dir, "scripts", "feast_materialize.py")
+        
         import sys
-        subprocess.run([sys.executable, script_path])
+        # 1. Run simulation
+        print("Starting live traffic simulation...")
+        subprocess.run([sys.executable, simulate_path])
+        
+        # 2. Compute features and update Parquet
+        print("Running feature SQL and updating Parquet...")
+        subprocess.run([sys.executable, feature_sql_path])
+        
+        # 3. Materialize to Feast online store
+        print("Materializing features to Online Store...")
+        subprocess.run([sys.executable, materialize_path])
+        
+        print("Live traffic simulation and feature update pipeline completed.")
         
     background_tasks.add_task(run_script)
-    return {"message": "Live traffic simulation started in the background."}
+    return {"message": "Live traffic simulation and automated feature pipeline started in the background."}

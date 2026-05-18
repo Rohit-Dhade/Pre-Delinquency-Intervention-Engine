@@ -27,8 +27,8 @@ DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS_ENCODED}@{DB_HOST}:{DB
 
 # Simulation Settings
 ITERATIONS = 50           # Fixed number of iterations to run
-MIN_SLEEP_SECONDS = 280    # Minimum wait time to mimic slow real-world traffic
-MAX_SLEEP_SECONDS = 600   # Maximum wait time
+MIN_SLEEP_SECONDS = 30    # Minimum wait time to mimic slow real-world traffic
+MAX_SLEEP_SECONDS = 120   # Maximum wait time
 MAX_TXNS_PER_CYCLE = 5    # Max number of transactions generated per cycle
 
 # Data Reference
