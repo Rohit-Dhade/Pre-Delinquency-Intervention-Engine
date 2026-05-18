@@ -1,5 +1,7 @@
 import joblib
-from fastapi import FastAPI, HTTPException
+import os
+import subprocess
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 
 from app.schemas import PredictionRequest, FeaturePredictionRequest
 from app.utils import build_dataframe, get_shap_explanation
@@ -125,3 +127,17 @@ async def predict(req: PredictionRequest):
 
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+@app.post("/simulate_traffic")
+async def simulate_traffic(background_tasks: BackgroundTasks):
+    """
+    Trigger the traffic simulation script in the background.
+    """
+    def run_script():
+        script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scripts", "simulate_live_traffic.py")
+        # Run it using the current environment's Python executable
+        import sys
+        subprocess.run([sys.executable, script_path])
+        
+    background_tasks.add_task(run_script)
+    return {"message": "Live traffic simulation started in the background."}
