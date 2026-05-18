@@ -2,7 +2,7 @@
 Script to apply Feast configurations and materialize data to the online store.
 
 Usage:
-    source delinquencyenv/bin/activate
+    source FastApi_Backend/delinquencyenv/bin/activate
     python scripts/feast_materialize.py
 """
 
