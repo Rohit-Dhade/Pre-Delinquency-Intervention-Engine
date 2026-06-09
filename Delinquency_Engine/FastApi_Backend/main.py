@@ -14,8 +14,29 @@ app = FastAPI(
 )
 
 # ── Load model ────────────────────────────────────────────────────────────────
-model = joblib.load("xgb_delinquency_model.joblib")
+model = None
+explainer = None
 
+def load_model_artifacts():
+    global model, explainer
+    
+    # Load model
+    latest_model_path = "xgb_model_latest.joblib"
+    fallback_model_path = "xgb_delinquency_model.joblib"
+    
+    if os.path.exists(latest_model_path):
+        model = joblib.load(latest_model_path)
+    else:
+        model = joblib.load(fallback_model_path)
+        
+    # Load SHAP explainer
+    explainer_path = "shap_explainer.joblib"
+    if os.path.exists(explainer_path):
+        explainer = joblib.load(explainer_path)
+    else:
+        explainer = None
+
+load_model_artifacts()
 
 # ── Routes ───────────────────────────────────────────────────────────────
 @app.get("/")
@@ -51,7 +72,7 @@ async def predict_with_feast(customer_id: str):
             }
 
         # SHAP
-        shap_result = get_shap_explanation(model, df, prediction, top_n=3)
+        shap_result = get_shap_explanation(model, df, prediction, top_n=3, explainer=explainer)
 
         # AI
         ai_reasons = await generate_ai_explanation(
@@ -102,7 +123,7 @@ async def predict(req: PredictionRequest):
             }
 
         # ── SHAP Explainability ──────────────────────────────────────────
-        shap_result = get_shap_explanation(model, df, prediction, top_n=3)
+        shap_result = get_shap_explanation(model, df, prediction, top_n=3, explainer=explainer)
 
         # ── AI-Powered Explanation (Mistral) ─────────────────────────────
         ai_reasons = await generate_ai_explanation(
@@ -127,6 +148,18 @@ async def predict(req: PredictionRequest):
 
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+@app.post("/admin/reload-model")
+async def reload_model():
+    """
+    Reloads the XGBoost model and SHAP explainer from disk into memory.
+    Used by the weekly retraining pipeline after dropping new .joblib files.
+    """
+    try:
+        load_model_artifacts()
+        return {"message": "Model and explainer reloaded successfully"}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to reload model: {str(exc)}")
 
 @app.post("/simulate_traffic")
 async def simulate_traffic(background_tasks: BackgroundTasks):

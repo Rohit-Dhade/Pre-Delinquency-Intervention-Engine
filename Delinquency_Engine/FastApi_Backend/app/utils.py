@@ -86,7 +86,7 @@ def build_dataframe(req: PredictionRequest) -> pd.DataFrame:
     return df
 
 
-def get_shap_explanation(model, df: pd.DataFrame, prediction: int, top_n: int = 3) -> dict:
+def get_shap_explanation(model, df: pd.DataFrame, prediction: int, top_n: int = 3, explainer=None) -> dict:
     """
     Use SHAP TreeExplainer to compute feature contributions and return
     the top N reasons driving the prediction.
@@ -96,7 +96,8 @@ def get_shap_explanation(model, df: pd.DataFrame, prediction: int, top_n: int = 
       - top_reasons: list of the top N features with their contribution details
       - all_contributions: full sorted list of feature contributions
     """
-    explainer = shap.TreeExplainer(model)
+    if explainer is None:
+        explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(df)
 
     # shap_values shape: (1, num_features) for binary classification

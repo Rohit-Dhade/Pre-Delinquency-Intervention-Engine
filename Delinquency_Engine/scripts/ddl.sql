@@ -111,3 +111,16 @@ CREATE INDEX IF NOT EXISTS idx_txn_category     ON transactions(merchant_categor
 CREATE INDEX IF NOT EXISTS idx_pe_customer      ON payment_events(customer_id, due_date);
 CREATE INDEX IF NOT EXISTS idx_pe_status        ON payment_events(status);
 CREATE INDEX IF NOT EXISTS idx_cf_customer_date ON customer_features(customer_id, feature_date);
+
+-- ── 5. Retrain Log ───────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS retrain_log (
+    id              SERIAL PRIMARY KEY,
+    run_timestamp   TIMESTAMP DEFAULT NOW(),
+    rows_used       INT,
+    class_ratio     NUMERIC(10,4),
+    pr_auc_before   NUMERIC(10,4),
+    pr_auc_after    NUMERIC(10,4),
+    model_version   VARCHAR(50),
+    pass_gate       BOOLEAN,
+    top_features    TEXT
+);
