@@ -1,6 +1,3 @@
-// ─────────────────────────────────────────────────────
-// src/email/htmlWrapper.js — Clean HTML email wrapper
-// ─────────────────────────────────────────────────────
 import config from '../config/index.js';
 
 /**

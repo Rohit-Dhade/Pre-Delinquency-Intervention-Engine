@@ -1,7 +1,3 @@
-// ─────────────────────────────────────────────────────
-// src/email/templates.js — Fallback email templates
-// ─────────────────────────────────────────────────────
-
 const FALLBACK_TEMPLATES = {
   critical: {
     subject: "We'd like to help — let's talk before things get harder",
