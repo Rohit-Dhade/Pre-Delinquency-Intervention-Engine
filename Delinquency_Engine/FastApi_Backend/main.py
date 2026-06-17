@@ -1,9 +1,13 @@
+import asyncio
 import joblib
 import logging
 import os
 import subprocess
+import sys
+from contextlib import asynccontextmanager
+
 import httpx
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 
 from app.schemas import PredictionRequest, FeaturePredictionRequest
 from app.utils import build_dataframe, get_shap_explanation
@@ -56,9 +60,78 @@ async def call_intervention_engine(
         # Intervention failure must NEVER break prediction
         logger.warning(f"Intervention service unreachable: {e}")
 
+# ── Traffic simulation background loop ────────────────────────────────────────
+SIMULATION_INTERVAL = int(os.getenv("SIMULATION_INTERVAL_SECONDS", "300"))  # 5 min default
+_simulation_task: asyncio.Task | None = None
+_simulation_running = False
+
+
+def _run_simulation_pipeline():
+    """Run the full traffic → features → materialize pipeline (blocking)."""
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    simulate_path = os.path.join(base_dir, "scripts", "simulate_live_traffic.py")
+    feature_sql_path = os.path.join(base_dir, "scripts", "run_feature_sql.py")
+    materialize_path = os.path.join(base_dir, "scripts", "feast_materialize.py")
+
+    logger.info("[Simulation] Starting traffic simulation...")
+    subprocess.run([sys.executable, simulate_path])
+
+    logger.info("[Simulation] Running feature SQL and updating Parquet...")
+    subprocess.run([sys.executable, feature_sql_path])
+
+    logger.info("[Simulation] Materializing features to Online Store...")
+    subprocess.run([sys.executable, materialize_path])
+
+    logger.info("[Simulation] Pipeline cycle completed.")
+
+
+async def _simulation_loop():
+    """Continuously run the simulation pipeline with pauses between cycles."""
+    global _simulation_running
+    _simulation_running = True
+    cycle = 0
+    while _simulation_running:
+        cycle += 1
+        logger.info(f"[Simulation] ─── Cycle {cycle} starting ───")
+        try:
+            # Run the blocking subprocess pipeline in a thread pool
+            await asyncio.to_thread(_run_simulation_pipeline)
+        except Exception as e:
+            logger.error(f"[Simulation] Pipeline error: {e}")
+
+        if not _simulation_running:
+            break
+        logger.info(f"[Simulation] Sleeping {SIMULATION_INTERVAL}s before next cycle...")
+        try:
+            await asyncio.sleep(SIMULATION_INTERVAL)
+        except asyncio.CancelledError:
+            break
+    logger.info("[Simulation] Loop stopped.")
+
+
+@asynccontextmanager
+async def lifespan(app):
+    """Start the simulation loop on boot, stop it on shutdown."""
+    global _simulation_task
+    logger.info("[Simulation] Auto-starting continuous traffic simulation...")
+    _simulation_task = asyncio.create_task(_simulation_loop())
+    yield
+    # Shutdown
+    global _simulation_running
+    _simulation_running = False
+    if _simulation_task:
+        _simulation_task.cancel()
+        try:
+            await _simulation_task
+        except asyncio.CancelledError:
+            pass
+    logger.info("[Simulation] Stopped on server shutdown.")
+
+
 app = FastAPI(
     title="Pre-Delinquency Prediction API",
     description="Predicts customer delinquency risk using behavioral & credit signals.",
+    lifespan=lifespan,
 )
 
 # ── Load model ────────────────────────────────────────────────────────────────
@@ -246,35 +319,35 @@ async def reload_model():
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to reload model: {str(exc)}")
 
-@app.post("/simulate_traffic")
-async def simulate_traffic(background_tasks: BackgroundTasks):
-    """
-    Trigger the traffic simulation script in the background.
-    """
-    def run_script():
-        base_dir = os.path.dirname(os.path.dirname(__file__))
-        simulate_path = os.path.join(base_dir, "scripts", "simulate_live_traffic.py")
-        feature_sql_path = os.path.join(base_dir, "scripts", "run_feature_sql.py")
-        materialize_path = os.path.join(base_dir, "scripts", "feast_materialize.py")
-        
-        import sys
-        # 1. Run simulation
-        print("Starting live traffic simulation...")
-        subprocess.run([sys.executable, simulate_path])
-        
-        # 2. Compute features and update Parquet
-        print("Running feature SQL and updating Parquet...")
-        subprocess.run([sys.executable, feature_sql_path])
-        
-        # 3. Materialize to Feast online store
-        print("Materializing features to Online Store...")
-        subprocess.run([sys.executable, materialize_path])
-        
-        print("Live traffic simulation and feature update pipeline completed.")
-        
-    background_tasks.add_task(run_script)
-    return {"message": "Live traffic simulation and automated feature pipeline started in the background."}
+@app.get("/simulation/status")
+async def simulation_status():
+    """Check if the background traffic simulation is running."""
+    return {
+        "running": _simulation_running,
+        "interval_seconds": SIMULATION_INTERVAL,
+    }
 
+
+@app.post("/simulation/stop")
+async def simulation_stop():
+    """Gracefully stop the background traffic simulation."""
+    global _simulation_running, _simulation_task
+    if not _simulation_running:
+        return {"message": "Simulation is not running."}
+    _simulation_running = False
+    if _simulation_task:
+        _simulation_task.cancel()
+    return {"message": "Simulation stop requested."}
+
+
+@app.post("/simulation/start")
+async def simulation_start():
+    """Restart the background traffic simulation if it was stopped."""
+    global _simulation_task, _simulation_running
+    if _simulation_running:
+        return {"message": "Simulation is already running."}
+    _simulation_task = asyncio.create_task(_simulation_loop())
+    return {"message": "Simulation restarted."}
 
 # ── Intervention Engine proxy routes ─────────────────────────────────────────
 # These forward requests from FastAPI (port 8000) to the Node.js
