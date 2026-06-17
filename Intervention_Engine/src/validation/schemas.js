@@ -21,7 +21,7 @@ export const triggerSchema = z.object({
   customer_features: z.object({
     emi_to_income_ratio: z.number(),
     customer_segment: z.enum(['salaried', 'self_employed', 'gig_worker']),
-    geography: z.enum(['metro', 'tier2', 'rural']),
+    geography: z.enum(['metro', 'urban', 'tier2', 'rural']),
   }),
   model_version: z.string(),
   dry_run: z.boolean().default(false),
