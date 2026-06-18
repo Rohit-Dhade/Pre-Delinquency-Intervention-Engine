@@ -1,6 +1,3 @@
-// ─────────────────────────────────────────────────────
-// src/services/messageGenerator.js — Mistral AI email gen
-// ─────────────────────────────────────────────────────
 import { Mistral } from '@mistralai/mistralai';
 import config from '../config/index.js';
 import logger from '../config/logger.js';
@@ -97,13 +94,13 @@ The email body starts from line 2. Do NOT include "SUBJECT:" anywhere else in th
   try {
     const client = getClient();
     const response = await client.chat.complete({
-      model: 'mistral-large-latest',
+      model: 'mistral-small-latest',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userPrompt },
       ],
-      temperature: 0.7,
-      maxTokens: 600,
+      temperature: 0.6,
+      top_p: 0.9,
     });
 
     const rawText = response.choices[0].message.content.trim();
