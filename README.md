@@ -1,4 +1,4 @@
-# 🏦 Pre-Delinquency Intervention Engine
+# Pre-Delinquency Intervention Engine
 
 A production-grade, end-to-end machine learning system for **predicting and preventing loan delinquency** in retail banking. The platform detects at-risk customers before they miss payments and automatically delivers personalised relief offers via email — powered by XGBoost, SHAP explainability, Feast feature store, and Mistral AI.
 
@@ -38,26 +38,26 @@ A production-grade, end-to-end machine learning system for **predicting and prev
 │  │    Delinquency Engine (PORT 8000)   │    │  Intervention Engine (PORT 3001) │ │
 │  │              FastAPI                │    │          Express.js              │ │
 │  │                                     │    │                                  │ │
-│  │  ┌───────────┐  ┌───────────────┐   │    │  ┌────────────┐  ┌───────────┐  │ │
-│  │  │  XGBoost  │  │  Feast Online │   │    │  │Tier Router │  │  Offer    │  │ │
-│  │  │   Model   │  │    Store      │   │    │  │            │  │  Engine   │  │ │
-│  │  └─────┬─────┘  └───────┬───────┘   │    │  └──────┬─────┘  └─────┬─────┘  │ │
-│  │        │                │           │    │         │              │        │ │
-│  │  ┌─────┴─────┐  ┌───────┴───────┐   │    │  ┌──────┴─────┐  ┌─────┴─────┐  │ │
-│  │  │   SHAP    │  │  Mistral AI   │   │    │  │  Channel   │  │  Mistral  │  │ │
-│  │  │ Explainer │  │  (Explain)    │   │    │  │  Router    │  │  AI (Gen) │  │ │
-│  │  └───────────┘  └───────────────┘   │    │  └────────────┘  └───────────┘  │ │
+│  │  ┌───────────┐  ┌───────────────┐   │    │  ┌────────────┐  ┌───────────┐   │ │
+│  │  │  XGBoost  │  │  Feast Online │   │    │  │Tier Router │  │  Offer    │   │ │
+│  │  │   Model   │  │    Store      │   │    │  │            │  │  Engine   │   │ │
+│  │  └─────┬─────┘  └───────┬───────┘   │    │  └──────┬─────┘  └─────┬─────┘   │ │
+│  │        │                │           │    │         │              │         │ │
+│  │  ┌─────┴─────┐  ┌───────┴───────┐   │    │  ┌──────┴─────┐  ┌─────┴─────┐   │ │
+│  │  │   SHAP    │  │  Mistral AI   │   │    │  │  Channel   │  │  Mistral  │   │ │
+│  │  │ Explainer │  │  (Explain)    │   │    │  │  Router    │  │  AI (Gen) │   │ │
+│  │  └───────────┘  └───────────────┘   │    │  └────────────┘  └───────────┘   │ │
 │  │                                     │    │                                  │ │
 │  │  POST /predict ──── prob > 0.20 ────│───▶│  POST /intervention/trigger      │ │
-│  │  GET  /predict/:id  (auto-call)     │    │  → Tier → Offer → Email → Log   │ │
+│  │  GET  /predict/:id  (auto-call)     │    │  → Tier → Offer → Email → Log    │ │
 │  └──────────────────┬──────────────────┘    └──────────────┬───────────────────┘ │
 │                     │                                      │                     │
-│            ┌────────┴──────────────────────────────────────┴──────┐               │
-│            │             PostgreSQL (Docker — PORT 5432)          │               │
-│            │  customers │ transactions │ payment_events │         │               │
-│            │  customer_features │ retrain_log │                   │               │
-│            │  intervention_log │ outcome_log │                   │               │
-│            └─────────────────────────────────────────────────────┘               │
+│            ┌────────┴──────────────────────────────────────┴──────┐              │
+│            │             PostgreSQL (Docker — PORT 5432)          │              │
+│            │  customers │ transactions │ payment_events │         │              │
+│            │  customer_features │ retrain_log │                   │              │
+│            │  intervention_log │ outcome_log │                    │              │
+│            └──────────────────────────────────────────────────────┘              │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -152,7 +152,6 @@ Delinquency/
 | **Email Delivery** | Nodemailer (Gmail SMTP) | SMTP mail transport |
 | **Orchestration** | Apache Airflow | Daily feature pipeline DAG |
 | **Validation** | Pydantic (Python), Zod (Node.js) | Request schema validation |
-| **Testing** | Jest + Supertest | 42 unit + integration tests |
 | **Containerisation** | Docker | PostgreSQL + FastAPI deployment |
 
 ---
@@ -383,7 +382,7 @@ GET /predict/CUST_0004 (FastAPI)
 # Option A: Docker (recommended)
 docker run -d --name db-db-1 \
   -e POSTGRES_USER=rohit \
-  -e POSTGRES_PASSWORD=@sy2026 \
+  -e POSTGRES_PASSWORD=******* \
   -e POSTGRES_DB=delinquency_db \
   -p 5432:5432 \
   postgres:16
@@ -463,7 +462,7 @@ curl http://localhost:8000/intervention/health
 | `MODEL_VERSION` | `v1.0.0` | Model version string sent to Intervention Engine |
 | `SIMULATION_INTERVAL_SECONDS` | `300` | Seconds between traffic simulation cycles |
 | `POSTGRES_USER` | `rohit` | PostgreSQL username |
-| `POSTGRES_PASSWORD` | `@sy2026` | PostgreSQL password |
+| `POSTGRES_PASSWORD` | `*******` | PostgreSQL password |
 | `POSTGRES_HOST` | `localhost` | PostgreSQL host |
 | `POSTGRES_PORT` | `5432` | PostgreSQL port |
 | `POSTGRES_DB` | `delinquency_db` | PostgreSQL database name |
