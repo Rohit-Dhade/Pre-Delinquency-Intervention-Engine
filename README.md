@@ -407,7 +407,7 @@ pip install -r ../requirements.txt
 echo 'MISTRAL_API_KEY=your_key_here' > .env
 
 # Initialize database schema
-PGPASSWORD='@sy2026' psql -h localhost -U rohit -d delinquency_db -f ../scripts/ddl.sql
+PGPASSWORD='*******' psql -h localhost -U rohit -d delinquency_db -f ../scripts/ddl.sql
 
 # Generate synthetic data (2,000 customers)
 python ../scripts/generate_synthetic_data.py
