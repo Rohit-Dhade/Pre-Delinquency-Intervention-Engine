@@ -531,6 +531,211 @@ curl -X POST http://localhost:3001/intervention/trigger \
 
 ---
 
+## Service 3 — Employee Authentication (Python/FastAPI)
+
+### Overview
+
+A complete employee authentication and authorisation layer added on top of the Delinquency Engine. All API endpoints (except `/health`) now require a JWT access token, and role-based access control (RBAC) restricts what each employee can do.
+
+### Architecture
+
+```
+Employee_Authentication/
+├── employee_auth/
+│   ├── __init__.py                ← Loads .env, package root
+│   ├── routers/
+│   │   └── auth.py                ← All /auth/* endpoints (9 routes)
+│   ├── models/
+│   │   └── auth_models.py         ← Pydantic request/response models
+│   ├── auth/
+│   │   ├── jwt_handler.py         ← JWT create + verify + get_current_employee
+│   │   ├── password_handler.py    ← bcrypt hash + password policy
+│   │   ├── permissions.py         ← require_role() RBAC dependency
+│   │   └── email_sender.py        ← aiosmtplib Gmail password reset emails
+│   ├── db/
+│   │   ├── pool.py                ← asyncpg connection pool (singleton)
+│   │   ├── auth_migrations.py     ← CREATE TABLE IF NOT EXISTS (4 tables)
+│   │   ├── auth_seed.py           ← Seed 15 employees on first run
+│   │   └── auth_queries.py        ← All parameterised SQL queries
+│   └── middleware/
+│       └── auth_middleware.py     ← IP + User-Agent extraction helpers
+├── .env                           ← Auth-specific environment variables
+└── requirements.txt               ← Additional pip dependencies
+```
+
+### Database Tables (4 New)
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `employees` | Employee accounts | `employee_id`, `email`, `password_hash` (bcrypt), `role`, `is_active` |
+| `employee_sessions` | Refresh token sessions | `employee_id`, `refresh_token_hash` (SHA256), `expires_at`, `revoked` |
+| `employee_audit_log` | Security audit trail | `employee_id`, `action`, `resource`, `ip_address`, `success`, `metadata` |
+| `password_reset_tokens` | One-time reset tokens | `employee_id`, `token_hash` (SHA256), `expires_at`, `used` |
+
+### Roles & Permissions
+
+| Endpoint | Admin | Risk Analyst | Relationship Manager |
+|----------|:-----:|:------------:|:--------------------:|
+| `POST /predict` | ✅ | ✅ | ✅ |
+| `GET /predict/:id` | ✅ | ✅ | ✅ |
+| `POST /admin/reload-model` | ✅ | ❌ | ❌ |
+| `POST /intervention/outcome` | ✅ | ❌ | ✅ |
+| `GET /intervention/stats` | ✅ | ✅ | ❌ |
+| `GET /intervention/history/:id` | ✅ | ✅ | ✅ |
+| `POST /auth/create-employee` | ✅ | ❌ | ❌ |
+| `POST /auth/deactivate-employee` | ✅ | ❌ | ❌ |
+| `GET /auth/employees` | ✅ | ❌ | ❌ |
+| `GET /auth/audit-log` | ✅ | ❌ | ❌ |
+| `GET /auth/me` | ✅ | ✅ | ✅ |
+| `GET /` (health) | 🔓 | 🔓 | 🔓 |
+
+### Auth Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/auth/login` | POST | Authenticate with email + password → access token + httpOnly refresh cookie |
+| `/auth/logout` | POST | Revoke session, clear refresh cookie |
+| `/auth/refresh` | POST | Get new access token from refresh cookie |
+| `/auth/reset-password/request` | POST | Request password reset email |
+| `/auth/reset-password/confirm` | POST | Reset password with emailed token |
+| `/auth/create-employee` | POST | Create new employee (admin only) |
+| `/auth/deactivate-employee` | POST | Deactivate employee (admin only) |
+| `/auth/employees` | GET | List all employees (admin only) |
+| `/auth/audit-log` | GET | View audit log with filters (admin only) |
+| `/auth/me` | GET | Get current employee profile |
+
+### Seeded Employees (15)
+
+On first startup, the system seeds **15 employees** if the table is empty:
+
+| Employee ID | Name | Role | Department | Password |
+|-------------|------|------|------------|----------|
+| EMP_001 | System Admin | admin | IT Administration | `ADMIN_PASSWORD` env var |
+| EMP_002 | Priya Sharma | risk_analyst | Collections | `Analyst@2026` |
+| EMP_003 | Rahul Verma | relationship_manager | Retail Banking | `Manager@2026` |
+| EMP_004 | Anita Desai | risk_analyst | Risk Management | `Analyst@2026` |
+| EMP_005 | Vikram Patel | relationship_manager | Retail Banking | `Manager@2026` |
+| EMP_006 | Sneha Iyer | admin | IT Administration | `Admin@2026` |
+| EMP_007 | Arjun Mehta | risk_analyst | Analytics | `Analyst@2026` |
+| EMP_008 | Deepa Nair | relationship_manager | Retail Banking | `Manager@2026` |
+| EMP_009 | Karthik Reddy | risk_analyst | Risk Management | `Analyst@2026` |
+| EMP_010 | Meera Joshi | relationship_manager | Customer Relations | `Manager@2026` |
+| EMP_011 | Sanjay Gupta | risk_analyst | Collections | `Analyst@2026` |
+| EMP_012 | Kavitha Menon | relationship_manager | Retail Banking | `Manager@2026` |
+| EMP_013 | Amit Chauhan | risk_analyst | Analytics | `Analyst@2026` |
+| EMP_014 | Roshni Kulkarni | relationship_manager | Customer Relations | `Manager@2026` |
+| EMP_015 | Nitin Saxena | admin | IT Administration | `Admin@2026` |
+
+### Authentication Setup
+
+#### 1. Install additional dependencies
+
+```bash
+cd Delinquency_Engine/FastApi_Backend
+source delinquencyenv/bin/activate
+pip install python-jose[cryptography] "passlib[bcrypt]" aiosmtplib slowapi python-multipart asyncpg
+```
+
+#### 2. Configure environment variables
+
+Add to `FastApi_Backend/.env` (already done if you pulled latest):
+
+```env
+DATABASE_URL=postgresql://rohit:%40sy2026@localhost:5432/delinquency_db
+JWT_SECRET=<must match Intervention_Engine/.env>
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=7
+ADMIN_EMAIL=admin@fintrust.com
+ADMIN_PASSWORD=Admin@2026
+GMAIL_USER=your_gmail@gmail.com
+GMAIL_APP_PASSWORD=your_app_password
+BANK_NAME=FinTrust Bank
+FRONTEND_URL=http://localhost:3000
+ENVIRONMENT=development
+```
+
+#### 3. Start the server
+
+```bash
+uvicorn main:app --reload --port 8000
+```
+
+On first startup, the system automatically:
+1. Creates the asyncpg connection pool
+2. Runs migration (4 tables)
+3. Seeds 15 employees (if table is empty)
+
+#### 4. First Login
+
+```bash
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@fintrust.com", "password": "Admin@2026"}'
+```
+
+Response:
+```json
+{
+  "access_token": "eyJ...",
+  "token_type": "bearer",
+  "expires_in": 900,
+  "employee": {
+    "employee_id": "EMP_001",
+    "full_name": "System Admin",
+    "role": "admin"
+  }
+}
+```
+
+#### 5. Using the API with auth
+
+All endpoints now require `Authorization: Bearer <access_token>`:
+
+```bash
+# Predict (requires auth)
+curl -X POST http://localhost:8000/predict \
+  -H "Authorization: Bearer eyJ..." \
+  -H "Content-Type: application/json" \
+  -d '{"customer_id": "CUST_0004", ...}'
+
+# Reload model (admin only)
+curl -X POST http://localhost:8000/admin/reload-model \
+  -H "Authorization: Bearer eyJ..."
+
+# List employees (admin only)
+curl http://localhost:8000/auth/employees \
+  -H "Authorization: Bearer eyJ..."
+```
+
+#### 6. JWT Shared with Node.js
+
+The `JWT_SECRET` must be identical in both `.env` files:
+- `Delinquency_Engine/FastApi_Backend/.env`
+- `Intervention_Engine/.env`
+
+Both services verify tokens using the same secret, enabling cross-service auth.
+
+### Rate Limits
+
+| Endpoint | Limit |
+|----------|-------|
+| `POST /auth/login` | 5 requests / minute / IP |
+| `POST /auth/reset-password/*` | 3 requests / minute / IP |
+| All other `/auth/*` | 30 requests / minute / IP |
+
+### Security Features
+
+- **Bcrypt** password hashing (never stored in plain text)
+- **Password policy**: min 8 chars, 1 uppercase, 1 number, 1 special char
+- **httpOnly cookies** for refresh tokens (not accessible via JavaScript)
+- **SHA-256 hashed** refresh tokens and reset tokens in database
+- **Constant-time responses** for login failures and reset requests (no user enumeration)
+- **Automatic session revocation** on password reset and account deactivation
+- **Complete audit trail** — every auth action logged with IP, user agent, and metadata
+
+---
+
 ## Author
 
 **Rohit Dhade**

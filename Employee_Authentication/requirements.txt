@@ -1,0 +1,10 @@
+# Employee Authentication — Additional Dependencies
+# These are ON TOP OF the existing FastAPI backend requirements.
+python-jose[cryptography]
+passlib[bcrypt]
+aiosmtplib
+slowapi
+python-multipart
+asyncpg
+python-dotenv
+bcrypt

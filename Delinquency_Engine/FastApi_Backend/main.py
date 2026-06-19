@@ -7,12 +7,31 @@ import sys
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Request
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.schemas import PredictionRequest, FeaturePredictionRequest
 from app.utils import build_dataframe, get_shap_explanation
 from app.llm_response import generate_ai_explanation
 from app.feature_store import get_customer_features
+
+# ── Employee Authentication integration ──────────────────────────────────────
+# Add Employee_Authentication package to Python path
+sys.path.insert(
+    0,
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "Employee_Authentication"),
+)
+import employee_auth  # noqa: E402  — loads .env from Employee_Authentication/
+from employee_auth.db.pool import init_pool, close_pool
+from employee_auth.db.auth_migrations import auth_migrate
+from employee_auth.db.auth_seed import auth_seed
+from employee_auth.auth.jwt_handler import get_current_employee
+from employee_auth.auth.permissions import require_role
+from employee_auth.routers.auth import router as auth_router, limiter
+from employee_auth.middleware.auth_middleware import get_client_ip, get_user_agent
+from employee_auth.db.auth_queries import log_audit
+from employee_auth.models.auth_models import EmployeeInDB
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -111,12 +130,19 @@ async def _simulation_loop():
 
 @asynccontextmanager
 async def lifespan(app):
-    """Start the simulation loop on boot, stop it on shutdown."""
+    """Start auth system + simulation loop on boot, clean up on shutdown."""
+    # ── Auth startup ─────────────────────────────────────────────────────
+    await init_pool()
+    await auth_migrate()
+    await auth_seed()
+    logger.info("Auth system initialised (pool → migration → seed)")
+
+    # ── Simulation startup ───────────────────────────────────────────────
     global _simulation_task
     logger.info("[Simulation] Auto-starting continuous traffic simulation...")
     _simulation_task = asyncio.create_task(_simulation_loop())
     yield
-    # Shutdown
+    # ── Shutdown ─────────────────────────────────────────────────────────
     global _simulation_running
     _simulation_running = False
     if _simulation_task:
@@ -126,6 +152,8 @@ async def lifespan(app):
         except asyncio.CancelledError:
             pass
     logger.info("[Simulation] Stopped on server shutdown.")
+    await close_pool()
+    logger.info("Auth DB pool closed")
 
 
 app = FastAPI(
@@ -133,6 +161,11 @@ app = FastAPI(
     description="Predicts customer delinquency risk using behavioral & credit signals.",
     lifespan=lifespan,
 )
+
+# ── Rate limiter + Auth router ───────────────────────────────────────────────
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.include_router(auth_router)
 
 # ── Load model ────────────────────────────────────────────────────────────────
 model = None
@@ -248,13 +281,30 @@ async def predict_with_feast(customer_id: str):
 
 
 @app.post("/predict")
-async def predict(req: PredictionRequest):
+async def predict(
+    req: PredictionRequest,
+    request: Request,
+    employee: EmployeeInDB = Depends(
+        require_role("admin", "risk_analyst", "relationship_manager")
+    ),
+):
     """
     Accept a single customer record, run it through the XGBoost model,
     and return the predicted class, probability scores, and AI-powered
     SHAP explanations (top 3 reasons for the prediction).
     """
     try:
+        # ── Audit log: PREDICT_ACCESS ────────────────────────────────────
+        await log_audit(
+            employee_id=employee.employee_id,
+            action="PREDICT_ACCESS",
+            resource=req.customer_id or "/predict",
+            ip_address=get_client_ip(request),
+            user_agent=get_user_agent(request),
+            success=True,
+            metadata={"customer_id": req.customer_id},
+        )
+
         df = build_dataframe(req)
 
         prediction = int(model.predict(df)[0])
@@ -304,17 +354,31 @@ async def predict(req: PredictionRequest):
             "all_feature_contributions": shap_result["all_contributions"],
         }
 
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
 @app.post("/admin/reload-model")
-async def reload_model():
+async def reload_model(
+    request: Request,
+    admin: EmployeeInDB = Depends(require_role("admin")),
+):
     """
     Reloads the XGBoost model and SHAP explainer from disk into memory.
     Used by the weekly retraining pipeline after dropping new .joblib files.
     """
     try:
         load_model_artifacts()
+        # ── Audit log ────────────────────────────────────────────────────
+        await log_audit(
+            employee_id=admin.employee_id,
+            action="ADMIN_RELOAD_MODEL",
+            resource="/admin/reload-model",
+            ip_address=get_client_ip(request),
+            user_agent=get_user_agent(request),
+            success=True,
+        )
         return {"message": "Model and explainer reloaded successfully"}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to reload model: {str(exc)}")
@@ -354,7 +418,12 @@ async def simulation_start():
 # Intervention Engine (port 3001) so frontends only need one API gateway.
 
 @app.post("/intervention/outcome")
-async def proxy_intervention_outcome(request_body: dict):
+async def proxy_intervention_outcome(
+    request_body: dict,
+    employee: EmployeeInDB = Depends(
+        require_role("admin", "relationship_manager")
+    ),
+):
     """
     Record a customer's response to an intervention (accepted / ignored).
     Proxied to the Intervention Engine.
@@ -375,7 +444,11 @@ async def proxy_intervention_outcome(request_body: dict):
 
 
 @app.get("/intervention/stats")
-async def proxy_intervention_stats():
+async def proxy_intervention_stats(
+    employee: EmployeeInDB = Depends(
+        require_role("admin", "risk_analyst")
+    ),
+):
     """
     Retrieve aggregated intervention metrics (acceptance rates, recovery
     rates, email delivery rate, tier distribution).
@@ -396,7 +469,12 @@ async def proxy_intervention_stats():
 
 
 @app.get("/intervention/history/{customer_id}")
-async def proxy_intervention_history(customer_id: str):
+async def proxy_intervention_history(
+    customer_id: str,
+    employee: EmployeeInDB = Depends(
+        require_role("admin", "risk_analyst", "relationship_manager")
+    ),
+):
     """
     Retrieve a customer's last 6 interventions and outcomes.
     Proxied to the Intervention Engine.
