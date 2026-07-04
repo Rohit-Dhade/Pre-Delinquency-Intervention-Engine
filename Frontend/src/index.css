@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+/* ── FinTrust Design System — Stitch-derived tokens ────────────────────────── */
+
+@theme {
+  /* Brand Colors */
+  --color-navy: #1E3A5F;
+  --color-navy-dark: #022448;
+  --color-navy-light: #2D486D;
+  --color-navy-hover: #163050;
+  --color-accent: #455F87;
+  --color-accent-light: #ADC8F5;
+  --color-accent-dim: #D5E3FF;
+
+  /* Surfaces (Stitch "Paper-on-Slate" layering) */
+  --color-surface: #FAF9FC;
+  --color-surface-dim: #DAD9DD;
+  --color-surface-container: #EEEDF1;
+  --color-surface-container-high: #E9E7EB;
+  --color-surface-container-low: #F4F3F7;
+  --color-surface-lowest: #FFFFFF;
+
+  /* Text */
+  --color-on-surface: #1A1C1E;
+  --color-on-surface-variant: #43474E;
+  --color-outline: #74777F;
+  --color-outline-variant: #C4C6CF;
+
+  /* Semantic */
+  --color-error: #BA1A1A;
+  --color-error-container: #FFDAD6;
+  --color-on-error: #FFFFFF;
+  --color-on-error-container: #93000A;
+
+  /* Risk Tier Colors — Consistent across all pages */
+  --color-tier-critical: #DC2626;
+  --color-tier-critical-bg: #FEE2E2;
+  --color-tier-critical-text: #991B1B;
+  --color-tier-moderate: #D97706;
+  --color-tier-moderate-bg: #FEF3C7;
+  --color-tier-moderate-text: #92400E;
+  --color-tier-watch: #CA8A04;
+  --color-tier-watch-bg: #FEF9C3;
+  --color-tier-watch-text: #854D0E;
+  --color-tier-stable: #059669;
+  --color-tier-stable-bg: #D1FAE5;
+  --color-tier-stable-text: #065F46;
+
+  /* Spacing Scale (Stitch 4px/8px grid) */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Typography */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Shadows (Stitch "subtle, high-diffusion") */
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  --shadow-elevated: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+
+  /* Radii (Stitch ROUND_EIGHT) */
+  --radius-sm: 4px;
+  --radius-DEFAULT: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+/* ── Base Resets ───────────────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 999px;
+}
+
+/* ── Animations ───────────────────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out both;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.2s ease-out both;
+}
+
+/* ── Skeleton Loading ─────────────────────────────────────────────────────── */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-container) 25%,
+    var(--color-surface-container-high) 50%,
+    var(--color-surface-container) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

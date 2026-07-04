@@ -143,8 +143,6 @@ async def login(body: LoginRequest, request: Request, response: Response):
 
     employee_data = dict(row)
 
-    # 4. Create session in DB first (we need session_id for the refresh token)
-    # Use a placeholder hash — we'll update it after creating the actual token
     expires_at = (datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)).replace(tzinfo=None)
     session_id = await q.create_session(
         employee_id=employee_data["employee_id"],
