@@ -2,6 +2,7 @@
 // src/server.js — Express application entry point
 // ─────────────────────────────────────────────────────
 import express from 'express';
+import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import config from './config/index.js';
 import logger from './config/logger.js';
@@ -15,6 +16,17 @@ const app = express();
 
 // ── Middleware ────────────────────────────────────────
 app.use(express.json({ limit: '1mb' }));
+
+// CORS — allow the React frontend (Vite dev server or production) to call
+// this service directly when not behind the FastAPI proxy.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173')
+  .split(',')
+  .map(o => o.trim());
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 
 // Rate limiting on POST /intervention/trigger
 const triggerLimiter = rateLimit({

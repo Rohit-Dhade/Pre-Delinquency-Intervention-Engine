@@ -43,7 +43,7 @@ export default function DashboardPage() {
               type="text"
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
-              placeholder="Enter Customer ID (e.g., CUST_001)"
+              placeholder="Enter Customer ID (e.g., CUST_0001)"
               className="w-full pl-10 pr-4 py-3 border border-outline-variant rounded-lg text-sm bg-white text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-navy focus:ring-offset-1 transition-all"
             />
           </div>

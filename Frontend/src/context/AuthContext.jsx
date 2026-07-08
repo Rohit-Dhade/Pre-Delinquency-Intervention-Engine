@@ -1,7 +1,7 @@
 /**
  * AuthContext — manages authentication state in React Context.
  *
- * On mount: calls GET /auth/me to silently restore session from
+ * On mount: calls POST /auth/refresh to silently restore session from
  * the refresh cookie. Shows a full-page spinner during this check.
  * Access token is stored in-memory only (via setAccessToken).
  */
@@ -10,6 +10,17 @@ import { setAccessToken, clearAccessToken } from '../api/client';
 import * as authApi from '../api/auth';
 
 const AuthContext = createContext(null);
+
+// Module-level dedup: prevents React StrictMode double-mount from
+// firing two simultaneous /auth/refresh requests in development.
+let _restorePromise = null;
+
+async function _doRestore() {
+  const refreshRes = await authApi.refresh();
+  setAccessToken(refreshRes.access_token);
+  const me = await authApi.getMe();
+  return me;
+}
 
 export function AuthProvider({ children }) {
   const [employee, setEmployee] = useState(null);
@@ -21,17 +32,21 @@ export function AuthProvider({ children }) {
 
     async function restoreSession() {
       try {
-        // Try to refresh the access token using the httpOnly cookie
-        const refreshRes = await authApi.refresh();
-        setAccessToken(refreshRes.access_token);
+        // Deduplicate: if a restore is already in flight, reuse it
+        if (!_restorePromise) {
+          _restorePromise = _doRestore().finally(() => {
+            _restorePromise = null;
+          });
+        }
 
-        // Now fetch employee profile
-        const me = await authApi.getMe();
+        const me = await _restorePromise;
         if (!cancelled) {
           setEmployee(me);
         }
-      } catch {
-        // No valid session — clear state silently
+      } catch (err) {
+        // 401 = no valid session (expected on first visit / after logout)
+        // 429 = rate-limited (e.g. React Strict Mode double-mount + HMR)
+        // Either way, clear state silently — don't log noise to console
         clearAccessToken();
         if (!cancelled) {
           setEmployee(null);

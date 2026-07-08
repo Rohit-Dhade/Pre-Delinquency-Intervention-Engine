@@ -3,6 +3,11 @@
  *
  * Both share the same in-memory access token.
  * Both have a 401 interceptor: refresh once → retry → else logout.
+ *
+ * In development, requests use relative paths (empty baseURL) and are
+ * forwarded to the backends by Vite's dev proxy (see vite.config.js).
+ * In production, set VITE_FASTAPI_URL / VITE_INTERVENTION_URL to the
+ * actual backend origins.
  */
 import axios from 'axios';
 
@@ -22,14 +27,17 @@ export function clearAccessToken() {
 }
 
 // ── FastAPI Client (port 8000) ──────────────────────────────────────────────
+// Empty baseURL → relative paths → Vite proxy handles in dev (no CORS)
 export const fastApi = axios.create({
-  baseURL: import.meta.env.VITE_FASTAPI_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_FASTAPI_URL || '',
   withCredentials: true, // sends httpOnly refresh cookie
 });
 
 // ── Intervention Engine Client ──────────────────────────────────────────────
+// All intervention calls already proxy through FastAPI, but kept for
+// potential future direct access.
 export const interventionApi = axios.create({
-  baseURL: import.meta.env.VITE_INTERVENTION_URL || 'http://localhost:3001',
+  baseURL: import.meta.env.VITE_INTERVENTION_URL || '',
   withCredentials: true,
 });
 
@@ -49,8 +57,9 @@ interventionApi.interceptors.request.use(attachToken);
 let _refreshPromise = null; // deduplicate concurrent refresh calls
 
 async function refreshAccessToken() {
+  // Use relative path so it goes through the proxy in dev
   const res = await axios.post(
-    `${fastApi.defaults.baseURL}/auth/refresh`,
+    '/auth/refresh',
     {},
     { withCredentials: true }
   );

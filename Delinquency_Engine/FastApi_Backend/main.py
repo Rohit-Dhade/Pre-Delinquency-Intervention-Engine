@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -160,6 +161,22 @@ app = FastAPI(
     title="Pre-Delinquency Prediction API",
     description="Predicts customer delinquency risk using behavioral & credit signals.",
     lifespan=lifespan,
+)
+
+# ── CORS ─────────────────────────────────────────────────────────────────────
+# Allows the React frontend (Vite dev server or production build) to call this
+# API directly when not behind a proxy.  Add production origins to the env var.
+_cors_origins = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173"
+).split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in _cors_origins],
+    allow_credentials=True,          # needed for httpOnly refresh cookie
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ── Rate limiter + Auth router ───────────────────────────────────────────────

@@ -16,7 +16,7 @@ import AdminAuditLogPage from './pages/AdminAuditLogPage';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         {/* Toast notifications */}
         <Toaster

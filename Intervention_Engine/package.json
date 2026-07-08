@@ -9,12 +9,17 @@
     "dev": "node --watch src/server.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --forceExit --detectOpenHandles"
   },
-  "keywords": ["delinquency", "intervention", "banking"],
+  "keywords": [
+    "delinquency",
+    "intervention",
+    "banking"
+  ],
   "author": "Rohit Dhade",
   "license": "ISC",
   "dependencies": {
     "@mistralai/mistralai": "^2.2.5",
     "axios": "^1.17.0",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
