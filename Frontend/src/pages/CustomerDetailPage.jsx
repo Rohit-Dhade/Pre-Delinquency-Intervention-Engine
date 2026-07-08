@@ -36,7 +36,14 @@ export default function CustomerDetailPage() {
     return () => { cancelled = true; };
   }, [customerId]);
 
-  if (loading) return <div className="flex items-center justify-center py-32"><div className="text-center"><Spinner size="lg" /><p className="text-on-surface-variant text-sm mt-4">Loading risk assessment…</p></div></div>;
+  if (loading) return <div className="flex min-h-screen items-center justify-center">
+    <div className="flex flex-col items-center text-center">
+      <Spinner size="lg" />
+      <p className="mt-4 text-sm text-on-surface-variant">
+        Loading risk assessment...
+      </p>
+    </div>
+  </div>
 
   if (error) return (
     <div className="max-w-2xl mx-auto py-16 text-center animate-fade-in">
@@ -110,7 +117,7 @@ export default function CustomerDetailPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-on-surface">{r.feature_label || r.feature}</p>
-                    <p className="text-xs text-on-surface-variant mt-0.5">Value: {typeof r.feature_value === 'number' ? r.feature_value.toFixed(4) : r.feature_value} · SHAP: {r.shap_value?.toFixed(4)} · <span className={isRisk ? 'text-tier-critical' : 'text-tier-stable'}>{r.direction}</span></p>
+                    <p className="text-xs text-on-surface-variant mt-0.5">Reason :  {typeof r.feature_value === 'number' ? r.feature_value.toFixed(4) : r.feature_value} {r.explanation || ""} · <span className={isRisk ? 'text-tier-critical' : 'text-tier-stable'}>{r.direction}</span></p>
                   </div>
                   <span className="text-xs font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">#{i + 1}</span>
                 </div>
@@ -153,7 +160,7 @@ export default function CustomerDetailPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-outline-variant">
-                {['Date','Tier','Offer','Channel','Email','Outcome'].map(h => <th key={h} className="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider py-3 px-3">{h}</th>)}
+                {['Date', 'Tier', 'Offer', 'Channel', 'Email', 'Outcome'].map(h => <th key={h} className="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider py-3 px-3">{h}</th>)}
               </tr></thead>
               <tbody>
                 {history.map((item, i) => (

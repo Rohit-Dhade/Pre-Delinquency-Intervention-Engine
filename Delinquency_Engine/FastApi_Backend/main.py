@@ -430,6 +430,75 @@ async def simulation_start():
     _simulation_task = asyncio.create_task(_simulation_loop())
     return {"message": "Simulation restarted."}
 
+# ── Customer Lookup routes ───────────────────────────────────────────────────
+
+@app.get("/customers/search")
+async def search_customers(
+    q: str = "",
+    employee: EmployeeInDB = Depends(
+        require_role("admin", "risk_analyst", "relationship_manager")
+    ),
+):
+    """
+    Search customers by customer_id, name, or account_number.
+    Returns up to 20 matching customers with key fields.
+    """
+    query_term = q.strip()
+    if not query_term:
+        raise HTTPException(status_code=400, detail="Search query 'q' is required.")
+
+    from employee_auth.db.pool import _pool  # reuse auth asyncpg pool
+
+    sql = """
+        SELECT customer_id, name, account_number, segment, geography,
+               credit_score, email, phone_number
+        FROM customers
+        WHERE customer_id ILIKE $1
+           OR name ILIKE $1
+           OR account_number ILIKE $1
+        ORDER BY customer_id
+        LIMIT 20
+    """
+    pattern = f"%{query_term}%"
+
+    try:
+        async with _pool.acquire() as conn:
+            rows = await conn.fetch(sql, pattern)
+        return [dict(r) for r in rows]
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Customer search failed: {exc}")
+
+
+@app.get("/customers/{customer_id}")
+async def get_customer_detail(
+    customer_id: str,
+    employee: EmployeeInDB = Depends(
+        require_role("admin", "risk_analyst", "relationship_manager")
+    ),
+):
+    """
+    Retrieve a single customer's profile by exact customer_id.
+    """
+    from employee_auth.db.pool import _pool
+
+    sql = """
+        SELECT customer_id, name, account_number, segment, geography,
+               credit_score, email, phone_number, dob, ifsc_code, created_at
+        FROM customers
+        WHERE customer_id = $1
+    """
+    try:
+        async with _pool.acquire() as conn:
+            row = await conn.fetchrow(sql, customer_id)
+        if not row:
+            raise HTTPException(status_code=404, detail=f"Customer '{customer_id}' not found.")
+        return dict(row)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Customer lookup failed: {exc}")
+
+
 # ── Intervention Engine proxy routes ─────────────────────────────────────────
 # These forward requests from FastAPI (port 8000) to the Node.js
 # Intervention Engine (port 3001) so frontends only need one API gateway.

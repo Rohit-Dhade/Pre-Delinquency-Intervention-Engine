@@ -4,12 +4,11 @@ B
 __dummy"
 __dummy_idJdelinquency
 ãª¬ĞğË§ãª¬ĞğË§
-S
-3
-customerBank customer"customer_idJdelinquency
-ãª¬Ğ€‰ç§ãª¬Ğ€‰ç§1"$c6da6cfa-9480-4dd2-a460-7431209685b9*¹•µÒ˜¾2á
-
-ñ
+U
+5
+customerBank customer"customer_idJdelinquency
+ãª¬Ğ€‰ç§œƒ¸ÒÀÃ¶Ÿ1"$d91b1861-7697-45ec-8db7-a2acb4fa0ab4*éÇ¸ÒĞáí•2Û
+ó
 customer_features_viewdelinquencycustomer"
 credit_score"
 emi_to_income_ratio"
@@ -45,17 +44,21 @@ S
 geography_tier2"
 risk_cohort_moderate"
 risk_cohort_stable2€Æ
-:­event_timestamp*
-created_atZ data/customer_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢customer_features_source’³•µÒĞ‡åx"³•µÒĞ‡åx@b
-customer_id’latestê
-ãª¬Ğÿ§¹•µÒÀàŒ
+:¯event_timestamp*
+created_atZ data/customer_features.parquetŠ1feast.infra.offline_stores.file_source.FileSource¢customer_features_source’âÇ¸Òø£ûŸ"âÇ¸Òø£ûŸ@b
+customer_id’latestâ
+ãª¬Ğÿ§éÇ¸Òˆ×¥•
 ää¡Ğ áºŒäª¬ĞÀô¾Œ
 û—Ñ¨«·¾ûÇ¡ÑÈ¾»¾
 ¼ó¤Ñø“´s¼¹¯ÑØè·s
 •Æ¿Ñ¨¼íµ•ŒÊÑàÁóµ
 üÑÄÑè¹“ü—ÏÑà€™
 ô•ÊÑ°¤ ¯ôÛÔÑØØ¦¯
-³ÏªÒ˜‹ÂÑ³•µÒĞ–ÆÑR«
+³ÏªÒ˜‹ÂÑ³•µÒĞ–ÆÑ
+ğ¼­Òğ×êİğ‚¸Òøøìİ
+½­Ò€è›ƒ¸Ò°úé›
+œ½­Òè‡œÁœƒ¸Ò°êÁ
+â®Ò¨¯–âÇ¸Òø©R«
 ¨
 ,feast.infra.online_stores.sqlite.SqliteTable"x
 R/home/rohit/Desktop/Delinquency/Delinquency_Engine/feast_repo/data/online_store.db"delinquency_customer_features_viewb½event_timestamp*

@@ -1,5 +1,5 @@
 from datetime import timedelta
-from feast import Entity, FeatureView, Field, FileSource
+from feast import Entity, FeatureView, Field, FileSource, ValueType
 from feast.types import Float64, String
 
 # ── 1. Define Entity ──────────────────────────────────────────────────────────
@@ -7,6 +7,7 @@ from feast.types import Float64, String
 customer = Entity(
     name="customer",
     join_keys=["customer_id"],
+    value_type=ValueType.STRING,
     description="Bank customer",
 )
 

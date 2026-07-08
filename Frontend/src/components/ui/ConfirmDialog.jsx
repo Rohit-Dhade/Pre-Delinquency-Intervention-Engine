@@ -30,7 +30,7 @@ export default function ConfirmDialog({
         onClick={onCancel}
       />
       {/* Dialog */}
-      <div className="relative bg-white rounded-xl shadow-elevated border border-outline-variant max-w-md w-full mx-4 p-6 animate-fade-in">
+      <div className="relative bg-white rounded-xl shadow-elevated border border-outline-variant max-w-[448px] w-full mx-4 p-6 animate-fade-in">
         <button
           onClick={onCancel}
           className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface transition-colors"

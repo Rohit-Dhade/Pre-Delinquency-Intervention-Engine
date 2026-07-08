@@ -8,7 +8,7 @@ Usage:
 
 import os
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 def main():
     print("═" * 60)
@@ -31,8 +31,8 @@ def main():
 
     # ── 2. Feast Materialize ──────────────────────────────────────────────────
     # Materialize features from the last 2 days up to now
-    start_date = (datetime.utcnow() - timedelta(days=2)).isoformat()
-    end_date = datetime.utcnow().isoformat()
+    start_date = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
+    end_date = datetime.now(timezone.utc).isoformat()
     
     print(f"\n▸ Running 'feast materialize {start_date} {end_date}'...")
     try:

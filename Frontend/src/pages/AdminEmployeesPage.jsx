@@ -107,7 +107,7 @@ function CreateEmployeeModal({ onClose, onCreated }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-on-surface/40" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-elevated border border-outline-variant max-w-lg w-full mx-4 p-6 animate-fade-in max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-xl shadow-elevated border border-outline-variant max-w-[512px] w-full mx-4 p-6 animate-fade-in max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-on-surface">Create New Employee</h2>
           <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface"><X className="w-5 h-5" /></button>

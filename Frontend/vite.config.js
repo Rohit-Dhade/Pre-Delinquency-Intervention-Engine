@@ -9,6 +9,7 @@ export default defineConfig({
     proxy: {
       '/auth': 'http://localhost:8000',
       '/predict': 'http://localhost:8000',
+      '/customers': 'http://localhost:8000',
       '/intervention': 'http://localhost:8000',
       '/admin': 'http://localhost:8000',
     },
