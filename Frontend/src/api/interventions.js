@@ -27,6 +27,33 @@ export async function triggerIntervention(payload) {
 }
 
 /**
+ * POST /intervention/preview
+ * Generate AI intervention preview without sending email or logging.
+ * Returns tier, offer, channel, and AI-generated message for review/editing.
+ *
+ * Request: { customer_id, delinquency_prob, top_3_shap_reasons, customer_features, model_version }
+ * Response: { customer_id, customer_name, customer_email, risk_tier, urgency_score, tier_label,
+ *   offer, channel, message: { subject, body, word_count, tone, email_type }, model_version }
+ */
+export async function previewIntervention(payload) {
+  const { data } = await fastApi.post('/intervention/preview', payload);
+  return data;
+}
+
+/**
+ * POST /intervention/send
+ * Send a reviewed/edited intervention email and log the intervention.
+ * Accepts the final (possibly edited) subject and body from the preview step.
+ *
+ * Request: { customer_id, delinquency_prob, risk_tier, offer, channel, subject, body, model_version, dry_run }
+ * Response: { customer_id, intervention_id, risk_tier, offer, channel, message, email_sent, email_delivered, ... }
+ */
+export async function sendIntervention(payload) {
+  const { data } = await fastApi.post('/intervention/send', payload);
+  return data;
+}
+
+/**
  * GET /intervention/history/{customerId}
  * Returns last 6 interventions with outcome data.
  *

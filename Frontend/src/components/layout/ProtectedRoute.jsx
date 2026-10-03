@@ -13,10 +13,9 @@ export default function ProtectedRoute({ children }) {
   // Full-page spinner during session restore — never flash login page
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+        <div className="flex items-center gap-3">
           <Spinner size="lg" />
-          <p className="text-on-surface-variant text-sm mt-4">Restoring session…</p>
         </div>
       </div>
     );

@@ -1,7 +1,6 @@
 /**
- * Sidebar navigation — consistent dark navy sidebar across all protected pages.
- * Design from Stitch: 260px fixed, dark navy (#1E3A5F), white text.
- * Role-conditional nav items based on ROLE_PERMISSIONS from permissions.py.
+ * Sidebar — minimal light navigation.
+ * White surface, slate borders, single active state.
  */
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
@@ -10,9 +9,9 @@ import {
   Users,
   ScrollText,
   LogOut,
-  Shield,
+  ShieldCheck,
   ChevronDown,
-  ChevronRight,
+  AlertTriangle,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -20,107 +19,126 @@ import { useAuth } from '../../context/AuthContext';
 const ROLE_LABELS = {
   admin: 'Administrator',
   risk_analyst: 'Risk Analyst',
-  relationship_manager: 'Relationship Mgr',
+  relationship_manager: 'Relationship Manager',
 };
 
-export default function Sidebar() {
+export function SidebarContent({ onNavigate }) {
   const { employee, logout } = useAuth();
   const navigate = useNavigate();
-  const [adminOpen, setAdminOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(true);
   const role = employee?.role;
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+    onNavigate?.();
   };
 
   const linkClass = ({ isActive }) =>
-    `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 ${
+    `flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13.5px] font-medium transition-colors ${
       isActive
-        ? 'bg-white/15 text-white border-l-[3px] border-accent-light'
-        : 'text-white/70 hover:bg-white/10 hover:text-white border-l-[3px] border-transparent'
+        ? 'bg-slate-900 text-white'
+        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
     }`;
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-[260px] bg-navy flex flex-col z-40">
+    <div className="flex flex-col h-full">
       {/* Brand */}
-      <div className="px-6 py-5 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-white" />
+      <div className="px-5 pt-6 pb-5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-4.5 h-4.5 text-white" size={18} />
           </div>
-          <div>
-            <h1 className="text-white font-semibold text-base leading-tight">FinTrust</h1>
-            <p className="text-white/50 text-xs">Intervention Engine</p>
+          <div className="min-w-0">
+            <p className="text-[15px] font-semibold text-slate-900 leading-none tracking-tight">FinTrust</p>
+            <p className="text-[11.5px] text-slate-500 mt-1 leading-none">Intervention Engine</p>
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <NavLink to="/dashboard" className={linkClass} end>
-          <LayoutDashboard className="w-[18px] h-[18px]" />
+      {/* Nav */}
+      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+        <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          Workspace
+        </p>
+        <NavLink to="/dashboard" className={linkClass} end onClick={onNavigate}>
+          <LayoutDashboard size={17} strokeWidth={2} />
           Dashboard
         </NavLink>
 
-        {/* Stats — risk_analyst and admin only */}
+        <NavLink to="/at-risk" className={linkClass} onClick={onNavigate}>
+          <AlertTriangle size={17} strokeWidth={2} />
+          At-Risk Customers
+        </NavLink>
+
         {(role === 'admin' || role === 'risk_analyst') && (
-          <NavLink to="/stats" className={linkClass}>
-            <BarChart3 className="w-[18px] h-[18px]" />
+          <NavLink to="/stats" className={linkClass} onClick={onNavigate}>
+            <BarChart3 size={17} strokeWidth={2} />
             Statistics
           </NavLink>
         )}
 
-        {/* Admin section — admin only */}
         {role === 'admin' && (
-          <>
+          <div className="pt-4">
+            <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Administration
+            </p>
             <button
               onClick={() => setAdminOpen(!adminOpen)}
-              className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white w-full transition-colors duration-150"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13.5px] font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 w-full transition-colors"
             >
-              <Users className="w-[18px] h-[18px]" />
+              <Users size={17} strokeWidth={2} />
               Admin
-              {adminOpen ? (
-                <ChevronDown className="w-4 h-4 ml-auto" />
-              ) : (
-                <ChevronRight className="w-4 h-4 ml-auto" />
-              )}
+              <ChevronDown
+                size={15}
+                className={`ml-auto transition-transform ${adminOpen ? '' : '-rotate-90'}`}
+              />
             </button>
             {adminOpen && (
-              <div className="ml-4 space-y-1 animate-slide-down">
-                <NavLink to="/admin/employees" className={linkClass}>
-                  <Users className="w-[18px] h-[18px]" />
+              <div className="mt-0.5 ml-4 pl-3 border-l border-slate-200 space-y-0.5 animate-slide-down">
+                <NavLink to="/admin/employees" className={linkClass} onClick={onNavigate}>
+                  <Users size={16} strokeWidth={2} />
                   Employees
                 </NavLink>
-                <NavLink to="/admin/audit-log" className={linkClass}>
-                  <ScrollText className="w-[18px] h-[18px]" />
+                <NavLink to="/admin/audit-log" className={linkClass} onClick={onNavigate}>
+                  <ScrollText size={16} strokeWidth={2} />
                   Audit Log
                 </NavLink>
               </div>
             )}
-          </>
+          </div>
         )}
       </nav>
 
-      {/* User Info */}
-      <div className="px-4 py-4 border-t border-white/10">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-white font-semibold text-sm">
+      {/* User */}
+      <div className="p-3 border-t border-slate-200">
+        <div className="flex items-center gap-2.5 px-2 py-2">
+          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 font-semibold text-[13px] shrink-0">
             {employee?.full_name?.charAt(0)?.toUpperCase() || '?'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">{employee?.full_name}</p>
-            <p className="text-white/50 text-xs">{ROLE_LABELS[role] || role}</p>
+            <p className="text-[13px] font-medium text-slate-900 truncate leading-tight">
+              {employee?.full_name}
+            </p>
+            <p className="text-[11.5px] text-slate-500 truncate">{ROLE_LABELS[role] || role}</p>
           </div>
+          <button
+            onClick={handleLogout}
+            title="Sign out"
+            className="p-1.5 rounded-md text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-white/60 hover:text-white text-sm w-full px-1 py-1.5 rounded transition-colors duration-150"
-        >
-          <LogOut className="w-4 h-4" />
-          Sign out
-        </button>
       </div>
+    </div>
+  );
+}
+
+export default function Sidebar() {
+  return (
+    <aside className="hidden lg:block fixed left-0 top-0 bottom-0 w-[248px] bg-white border-r border-slate-200 z-40">
+      <SidebarContent />
     </aside>
   );
 }

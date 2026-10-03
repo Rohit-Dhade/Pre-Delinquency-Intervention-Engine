@@ -1,8 +1,7 @@
 /**
- * ConfirmDialog — modal for destructive/live-send actions.
- * Stitch spec: semi-transparent Slate-900 backdrop (40% opacity).
+ * ConfirmDialog — minimal centered dialog.
  */
-import { AlertTriangle, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export default function ConfirmDialog({
   open,
@@ -17,54 +16,46 @@ export default function ConfirmDialog({
 }) {
   if (!open) return null;
 
-  const confirmColors =
+  const confirmCls =
     variant === 'danger'
       ? 'bg-red-600 hover:bg-red-700 text-white'
-      : 'bg-amber-600 hover:bg-amber-700 text-white';
+      : 'bg-slate-900 hover:bg-slate-800 text-white';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-on-surface/40"
+        className="absolute inset-0 bg-slate-900/40"
         onClick={onCancel}
       />
-      {/* Dialog */}
-      <div className="relative bg-white rounded-xl shadow-elevated border border-outline-variant max-w-[448px] w-full mx-4 p-6 animate-fade-in">
+      <div className="relative bg-white rounded-xl shadow-xl border border-slate-200 max-w-[420px] w-full p-6 animate-fade-in">
         <button
           onClick={onCancel}
-          className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface transition-colors"
+          className="absolute top-4 right-4 p-1 rounded-md text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+          aria-label="Close"
         >
-          <X className="w-5 h-5" />
+          <X size={18} />
         </button>
 
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-on-surface">{title}</h3>
-            {description && (
-              <p className="text-sm text-on-surface-variant mt-1">{description}</p>
-            )}
-          </div>
-        </div>
+        <h3 className="text-[15px] font-semibold text-slate-900 tracking-tight pr-8">{title}</h3>
+        {description && (
+          <p className="text-[13.5px] text-slate-600 mt-1.5 leading-relaxed">{description}</p>
+        )}
 
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex justify-end gap-2.5 mt-6">
           <button
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-on-surface border border-outline-variant rounded-lg hover:bg-surface-container transition-colors"
+            className="btn-secondary !py-2 !text-[13.5px]"
           >
             {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${confirmColors}`}
+            className={`inline-flex items-center gap-2 px-4 py-2 text-[13.5px] font-medium rounded-lg transition-colors ${confirmCls}`}
           >
             {loading && (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             )}
             {confirmLabel}
           </button>

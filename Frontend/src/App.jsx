@@ -13,6 +13,7 @@ import InterventionNewPage from './pages/InterventionNewPage';
 import StatsPage from './pages/StatsPage';
 import AdminEmployeesPage from './pages/AdminEmployeesPage';
 import AdminAuditLogPage from './pages/AdminAuditLogPage';
+import AtRiskPage from './pages/AtRiskPage';
 
 export default function App() {
   return (
@@ -25,15 +26,18 @@ export default function App() {
             duration: 4000,
             style: {
               fontFamily: 'Inter, sans-serif',
-              fontSize: '14px',
-              borderRadius: '8px',
-              padding: '12px 16px',
+              fontSize: '13.5px',
+              borderRadius: '10px',
+              padding: '11px 14px',
+              border: '1px solid #e2e8f0',
+              color: '#0f172a',
+              boxShadow: '0 4px 12px rgba(16,24,40,.08)',
             },
             success: {
-              iconTheme: { primary: '#059669', secondary: '#fff' },
+              iconTheme: { primary: '#067647', secondary: '#fff' },
             },
             error: {
-              iconTheme: { primary: '#DC2626', secondary: '#fff' },
+              iconTheme: { primary: '#b42318', secondary: '#fff' },
             },
           }}
         />
@@ -52,6 +56,7 @@ export default function App() {
             }
           >
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/at-risk" element={<AtRiskPage />} />
             <Route path="/customer/:customerId" element={<CustomerDetailPage />} />
             <Route path="/intervention/new" element={<InterventionNewPage />} />
             <Route path="/stats" element={<StatsPage />} />

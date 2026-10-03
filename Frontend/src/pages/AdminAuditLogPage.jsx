@@ -7,9 +7,9 @@ import { useRequireRole } from '../hooks/useRequireRole';
 import Spinner from '../components/ui/Spinner';
 
 const ACTIONS = [
-  'LOGIN_SUCCESS','LOGIN_FAILED','LOGOUT','TOKEN_REFRESH',
-  'PASSWORD_RESET_REQUEST','PASSWORD_RESET_COMPLETE',
-  'ADMIN_CREATE_EMPLOYEE','ADMIN_DEACTIVATE_EMPLOYEE','PREDICT_ACCESS',
+  'LOGIN_SUCCESS', 'LOGIN_FAILED', 'LOGOUT', 'TOKEN_REFRESH',
+  'PASSWORD_RESET_REQUEST', 'PASSWORD_RESET_COMPLETE',
+  'ADMIN_CREATE_EMPLOYEE', 'ADMIN_DEACTIVATE_EMPLOYEE', 'PREDICT_ACCESS',
   'ADMIN_RELOAD_MODEL',
 ];
 
@@ -28,7 +28,7 @@ export default function AdminAuditLogPage() {
       const data = await getAuditLog(clean);
       setLogs(data);
     } catch (err) {
-      const d = err.response?.data?.detail || 'Failed to load audit log';
+      const d = err.response?.data?.detail || 'Failed to load audit log.';
       setError(d); toast.error(d);
     } finally { setLoading(false); }
   };
@@ -36,73 +36,88 @@ export default function AdminAuditLogPage() {
   useEffect(() => { fetchLogs(); }, []);
 
   const handleFilter = (e) => { e.preventDefault(); fetchLogs(filters); };
+  const clearFilters = () => {
+    const empty = { employee_id: '', action: '', from_date: '', to_date: '' };
+    setFilters(empty);
+    fetchLogs(empty);
+  };
 
   return (
-    <div className="max-w-6xl animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-on-surface tracking-tight">Audit Log</h1>
-        <p className="text-sm text-on-surface-variant mt-1">System activity and security events</p>
+    <div className="space-y-5 animate-fade-in">
+      <div>
+        <h1 className="text-[22px] font-semibold text-slate-900 tracking-tight">Audit log</h1>
+        <p className="text-[13.5px] text-slate-500 mt-1">Security and activity events across the system</p>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl border border-outline-variant shadow-card p-5 mb-6">
-        <form onSubmit={handleFilter} className="flex flex-wrap items-end gap-4">
-          <div className="flex-1 min-w-[160px]">
-            <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Employee ID</label>
-            <input value={filters.employee_id} onChange={(e) => setFilters(f => ({ ...f, employee_id: e.target.value }))} placeholder="EMP_001" className="w-full px-3 py-2 border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy focus:ring-offset-1" />
+      <div className="card p-4">
+        <form onSubmit={handleFilter} className="flex flex-wrap items-end gap-3">
+          <div className="flex-1 min-w-[150px]">
+            <label className="label">Employee ID</label>
+            <input value={filters.employee_id} onChange={(e) => setFilters((f) => ({ ...f, employee_id: e.target.value }))} placeholder="EMP_001" className="input !py-2" />
           </div>
-          <div className="flex-1 min-w-[160px]">
-            <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Action</label>
-            <select value={filters.action} onChange={(e) => setFilters(f => ({ ...f, action: e.target.value }))} className="w-full px-3 py-2 border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy focus:ring-offset-1 bg-white">
+          <div className="flex-1 min-w-[150px]">
+            <label className="label">Action</label>
+            <select value={filters.action} onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value }))} className="input !py-2 bg-white">
               <option value="">All actions</option>
-              {ACTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+              {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
-          <div className="min-w-[140px]">
-            <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">From</label>
-            <input type="datetime-local" value={filters.from_date} onChange={(e) => setFilters(f => ({ ...f, from_date: e.target.value }))} className="w-full px-3 py-2 border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy focus:ring-offset-1" />
+          <div className="min-w-[150px]">
+            <label className="label">From</label>
+            <input type="datetime-local" value={filters.from_date} onChange={(e) => setFilters((f) => ({ ...f, from_date: e.target.value }))} className="input !py-2" />
           </div>
-          <div className="min-w-[140px]">
-            <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">To</label>
-            <input type="datetime-local" value={filters.to_date} onChange={(e) => setFilters(f => ({ ...f, to_date: e.target.value }))} className="w-full px-3 py-2 border border-outline-variant rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-navy focus:ring-offset-1" />
+          <div className="min-w-[150px]">
+            <label className="label">To</label>
+            <input type="datetime-local" value={filters.to_date} onChange={(e) => setFilters((f) => ({ ...f, to_date: e.target.value }))} className="input !py-2" />
           </div>
-          <button type="submit" className="px-4 py-2 bg-navy hover:bg-navy-hover text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
-            <Filter className="w-4 h-4" />Apply
-          </button>
+          <div className="flex gap-2">
+            <button type="submit" className="btn-primary !py-2 !text-[13px]">
+              <Filter size={15} />Apply
+            </button>
+            <button type="button" onClick={clearFilters} className="btn-secondary !py-2 !text-[13px]">Clear</button>
+          </div>
         </form>
       </div>
 
-      {/* Error */}
-      {error && <div className="p-4 rounded-lg bg-error-container text-on-error-container text-sm mb-6">{error}</div>}
+      {error && <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-[13.5px] text-red-800">{error}</div>}
 
-      {/* Table */}
       {loading ? (
         <div className="flex items-center justify-center py-16"><Spinner size="lg" /></div>
       ) : (
-        <div className="bg-white rounded-xl border border-outline-variant shadow-card overflow-hidden">
+        <div className="card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="bg-surface-container-low border-b border-outline-variant">
-                {['Timestamp','Employee','Action','Resource','IP','Success','Metadata'].map(h => <th key={h} className="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wider py-3 px-4">{h}</th>)}
+            <table className="w-full text-[13px]">
+              <thead className="table-head"><tr>
+                {['Timestamp', 'Employee', 'Action', 'Resource', 'IP', 'Status'].map((h) => <th key={h}>{h}</th>)}
               </tr></thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {logs.length === 0 ? (
-                  <tr><td colSpan={7} className="py-12 text-center text-sm text-on-surface-variant"><Search className="w-6 h-6 mx-auto mb-2 text-outline" />No audit log entries found</td></tr>
-                ) : logs.map((log, i) => (
-                  <tr key={log.id} className={`border-b border-outline-variant/50 ${i % 2 === 0 ? 'bg-white' : 'bg-surface-container-low'}`}>
-                    <td className="py-3 px-4 text-xs text-on-surface whitespace-nowrap">{log.timestamp ? format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss') : '—'}</td>
-                    <td className="py-3 px-4 font-mono text-xs text-on-surface">{log.employee_id || '—'}</td>
-                    <td className="py-3 px-4"><span className="text-xs font-medium px-2 py-0.5 rounded bg-surface-container text-on-surface">{log.action}</span></td>
-                    <td className="py-3 px-4 text-xs text-on-surface-variant max-w-[160px] truncate">{log.resource || '—'}</td>
-                    <td className="py-3 px-4 text-xs text-on-surface-variant font-mono">{log.ip_address || '—'}</td>
-                    <td className="py-3 px-4">{log.success ? <CheckCircle2 className="w-4 h-4 text-tier-stable" /> : <XCircle className="w-4 h-4 text-error" />}</td>
-                    <td className="py-3 px-4 text-xs text-on-surface-variant max-w-[200px] truncate">{log.metadata ? JSON.stringify(log.metadata) : '—'}</td>
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center">
+                      <Search size={20} className="mx-auto mb-2 text-slate-300" />
+                      <p className="text-[13.5px] text-slate-500">No audit entries match these filters.</p>
+                    </td>
+                  </tr>
+                ) : logs.map((log) => (
+                  <tr key={log.id} className="hover:bg-slate-50/70">
+                    <td className="py-2.5 px-4 text-slate-600 whitespace-nowrap tabular-nums text-xs">{log.timestamp ? format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss') : '—'}</td>
+                    <td className="py-2.5 px-4 font-mono text-xs text-slate-700">{log.employee_id || '—'}</td>
+                    <td className="py-2.5 px-4">
+                      <code className="text-[11.5px] font-mono bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">{log.action}</code>
+                    </td>
+                    <td className="py-2.5 px-4 text-xs text-slate-500 max-w-[180px] truncate">{log.resource || '—'}</td>
+                    <td className="py-2.5 px-4 text-xs text-slate-500 font-mono">{log.ip_address || '—'}</td>
+                    <td className="py-2.5 px-4">
+                      {log.success
+                        ? <span className="inline-flex items-center gap-1 text-[12px] text-green-700 font-medium"><CheckCircle2 size={14} />OK</span>
+                        : <span className="inline-flex items-center gap-1 text-[12px] text-red-600 font-medium"><XCircle size={14} />Fail</span>}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {logs.length > 0 && <div className="px-4 py-3 border-t border-outline-variant text-xs text-on-surface-variant">Showing {logs.length} entries</div>}
+          {logs.length > 0 && <div className="px-4 py-2.5 border-t border-slate-200 text-xs text-slate-400 bg-slate-50/60">{logs.length} entr{logs.length !== 1 ? 'ies' : 'y'}</div>}
         </div>
       )}
     </div>

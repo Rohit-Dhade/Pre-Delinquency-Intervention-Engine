@@ -19,6 +19,13 @@ export const TIER_CONFIG = {
     text: '#991B1B',
     color: '#DC2626',
   },
+  high: {
+    label: 'High',
+    fullLabel: 'Proactive Intervention Advised',
+    bg: '#FFF7ED',
+    text: '#9A3412',
+    color: '#EA580C',
+  },
   moderate: {
     label: 'Moderate',
     fullLabel: 'Early Intervention Recommended',
@@ -29,6 +36,13 @@ export const TIER_CONFIG = {
     bg: '#FEF3C7',
     text: '#92400E',
     color: '#D97706',
+  },
+  early_warning: {
+    label: 'Early Warning',
+    fullLabel: 'Monitor Closely',
+    bg: '#EFF6FF',
+    text: '#1E40AF',
+    color: '#2563EB',
   },
   watch: {
     label: 'Watch',

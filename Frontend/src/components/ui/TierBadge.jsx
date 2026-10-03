@@ -1,23 +1,25 @@
 /**
- * TierBadge — consistent risk tier badge across all pages.
- * Uses the tier color scale defined once in tiers.js.
+ * TierBadge — minimal pill, single dot.
  */
 import { getTierConfig } from '../../utils/tiers';
 
-export default function TierBadge({ tier, showLabel = false }) {
+export default function TierBadge({ tier }) {
   const config = getTierConfig(tier);
 
   return (
     <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wide"
-      style={{ backgroundColor: config.bg, color: config.text }}
+      className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full text-[11.5px] font-medium border"
+      style={{
+        backgroundColor: config.bg,
+        color: config.text,
+        borderColor: `${config.color}26`,
+      }}
     >
       <span
         className="w-1.5 h-1.5 rounded-full"
         style={{ backgroundColor: config.color }}
       />
       {config.label}
-      {showLabel && <span className="font-normal normal-case tracking-normal ml-1">— {config.fullLabel}</span>}
     </span>
   );
 }
