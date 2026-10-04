@@ -93,4 +93,6 @@ watchfiles==1.1.1
 websockets==16.0
 Werkzeug==3.1.8
 xgboost==3.2.0
+passlib==1.7.4
+bcrypt==4.0.1
 email-validator
