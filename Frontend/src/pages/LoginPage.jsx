@@ -40,17 +40,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-[400px] animate-fade-in">
-        <div className="flex flex-col items-center mb-7">
+    <div className="min-h-screen w-full bg-[#f8fafc] flex items-center justify-center text-center px-4 py-12">
+      <div className="w-full max-w-[400px] mx-auto flex flex-col items-center justify-center text-center animate-fade-in">
+        <div className="flex flex-col items-center justify-center text-center w-full mb-7">
           <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center mb-4">
             <ShieldCheck size={20} className="text-white" />
           </div>
-          <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight">FinTrust</h1>
-          <p className="text-[13.5px] text-slate-500 mt-1">Sign in to Intervention Engine</p>
+          <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight text-center">FinTrust</h1>
+          <p className="text-[13.5px] text-slate-500 mt-1 text-center">Sign in to Intervention Engine</p>
         </div>
 
-        <div className="card p-6 sm:p-7">
+        <div className="card p-6 sm:p-7 w-full text-center">
           {apiError && (
             <div className="flex items-start gap-2.5 p-3 rounded-lg bg-red-50 border border-red-200 text-[13px] text-red-800 mb-5">
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
@@ -58,25 +58,25 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <label htmlFor="login-email" className="label">Email</label>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-center">
+            <div className="text-center">
+              <label htmlFor="login-email" className="label text-center">Email</label>
               <input
                 id="login-email"
                 type="email"
                 autoComplete="email"
                 placeholder="you@fintrust.com"
-                className="input"
+                className="input text-center"
                 {...register('email')}
               />
               {errors.email && (
-                <p className="text-red-600 text-xs mt-1.5">{errors.email.message}</p>
+                <p className="text-red-600 text-xs mt-1.5 text-center">{errors.email.message}</p>
               )}
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="login-password" className="label !mb-0">Password</label>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-3 mb-1.5 text-center">
+                <label htmlFor="login-password" className="label !mb-0 text-center">Password</label>
                 <Link
                   to="/reset-password"
                   className="text-[12.5px] font-medium text-slate-600 hover:text-slate-900"
@@ -90,7 +90,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   placeholder="Enter your password"
-                  className="input pr-10"
+                  className="input pr-10 text-center"
                   {...register('password')}
                 />
                 <button
@@ -104,7 +104,7 @@ export default function LoginPage() {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-600 text-xs mt-1.5">{errors.password.message}</p>
+                <p className="text-red-600 text-xs mt-1.5 text-center">{errors.password.message}</p>
               )}
             </div>
 
