@@ -1,7 +1,7 @@
 /**
  * Login Page — minimal centered card.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +16,19 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Lock page scroll while login is mounted — the global `html { zoom: 1.2 }`
+  // otherwise makes any 100dvh wrapper taller than the viewport.
+  useEffect(() => {
+    const prevHtml = document.documentElement.style.overflow;
+    const prevBody = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.documentElement.style.overflow = prevHtml;
+      document.body.style.overflow = prevBody;
+    };
+  }, []);
 
   const {
     register,
@@ -40,46 +53,49 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#f8fafc] flex items-center justify-center text-center px-4 py-12">
-      <div className="w-full max-w-[400px] mx-auto flex flex-col items-center justify-center text-center animate-fade-in">
-        <div className="flex flex-col items-center justify-center text-center w-full mb-7">
-          <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center mb-4">
-            <ShieldCheck size={20} className="text-white" />
+    <div
+      className="fixed inset-0 w-full overflow-hidden bg-[#f8fafc] flex items-center justify-center px-4 py-4"
+      style={{ zoom: 1.25 / 1.2 }}
+    >
+      <div className="w-full max-w-[480px] mx-auto flex flex-col items-stretch justify-center animate-fade-in max-h-full overflow-hidden">
+        <div className="flex flex-col items-center justify-center text-center w-full mb-6 shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center mb-4">
+            <ShieldCheck size={28} className="text-white" />
           </div>
-          <h1 className="text-[20px] font-semibold text-slate-900 tracking-tight text-center">FinTrust</h1>
-          <p className="text-[13.5px] text-slate-500 mt-1 text-center">Sign in to Intervention Engine</p>
+          <h1 className="text-[26px] font-semibold text-slate-900 tracking-tight text-center">FinTrust</h1>
+          <p className="text-[15.5px] text-slate-500 mt-1.5 text-center">Sign in to Intervention Engine</p>
         </div>
 
-        <div className="card p-6 sm:p-7 w-full text-center">
+        <div className="card p-8 w-full text-left shrink-0">
           {apiError && (
-            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-red-50 border border-red-200 text-[13px] text-red-800 mb-5">
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-red-50 border border-red-200 text-[13px] text-red-800 mb-5 text-left">
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
               {apiError}
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-center">
-            <div className="text-center">
-              <label htmlFor="login-email" className="label text-center">Email</label>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 text-left">
+            <div className="text-left">
+              <label htmlFor="login-email" className="label text-left !text-[13.5px] !mb-2">Email</label>
               <input
                 id="login-email"
                 type="email"
                 autoComplete="email"
                 placeholder="you@fintrust.com"
-                className="input text-center"
+                className="input text-left !py-3 !text-[15px]"
                 {...register('email')}
               />
               {errors.email && (
-                <p className="text-red-600 text-xs mt-1.5 text-center">{errors.email.message}</p>
+                <p className="text-red-600 text-xs mt-1.5 text-left">{errors.email.message}</p>
               )}
             </div>
 
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-3 mb-1.5 text-center">
-                <label htmlFor="login-password" className="label !mb-0 text-center">Password</label>
+            <div className="text-left">
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="login-password" className="label !mb-0 text-left !text-[13.5px]">Password</label>
                 <Link
                   to="/reset-password"
-                  className="text-[12.5px] font-medium text-slate-600 hover:text-slate-900"
+                  className="text-[13.5px] font-medium text-slate-600 hover:text-slate-900 ml-auto"
                 >
                   Forgot password?
                 </Link>
@@ -90,7 +106,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   placeholder="Enter your password"
-                  className="input pr-10 text-center"
+                  className="input pr-10 text-left !py-3 !text-[15px]"
                   {...register('password')}
                 />
                 <button
@@ -104,14 +120,14 @@ export default function LoginPage() {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-600 text-xs mt-1.5 text-center">{errors.password.message}</p>
+                <p className="text-red-600 text-xs mt-1.5 text-left">{errors.password.message}</p>
               )}
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="btn-primary w-full !py-2.5"
+              className="btn-primary w-full !py-3 !text-[15px]"
             >
               {submitting ? (
                 <>
@@ -125,7 +141,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-6">
+        <p className="text-center text-[13px] text-slate-400 mt-5 shrink-0">
           © {new Date().getFullYear()} FinTrust Financial Services
         </p>
       </div>
