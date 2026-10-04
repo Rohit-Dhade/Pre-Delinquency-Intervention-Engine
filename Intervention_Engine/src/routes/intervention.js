@@ -2,7 +2,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import config from '../config/index.js';
 import logger from '../config/logger.js';
-import { triggerSchema, outcomeSchema } from '../validation/schemas.js';
+import { triggerSchema, outcomeSchema, previewSchema, sendSchema } from '../validation/schemas.js';
 import { tierRouter } from '../services/tierRouter.js';
 import { offerEngine } from '../services/offerEngine.js';
 import { channelRouter } from '../services/channelRouter.js';
@@ -181,6 +181,181 @@ router.post('/trigger', async (req, res, next) => {
         tone: message.tone,
         email_type: message.email_type,
       },
+      email_sent: emailSent,
+      email_delivered: emailDelivered,
+      dry_run,
+      model_version,
+      triggered_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─────────────────────────────────────────────────────
+// POST /intervention/preview
+// ─────────────────────────────────────────────────────
+router.post('/preview', async (req, res, next) => {
+  try {
+    const parseResult = previewSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        issues: parseResult.error.issues,
+      });
+    }
+
+    const { customer_id, delinquency_prob, top_3_shap_reasons, customer_features, model_version } = parseResult.data;
+
+    const customer = await getCustomerById(customer_id);
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found', customer_id });
+    }
+
+    const pastOfferResponse = await getLastInterventionResponse(customer_id);
+    const tierResult = tierRouter(delinquency_prob);
+
+    if (tierResult.tier === 'stable') {
+      return res.status(200).json({
+        status: 'no_action_required',
+        customer_id,
+        tier: tierResult.tier,
+      });
+    }
+
+    const offer = offerEngine(
+      tierResult.tier,
+      customer_features.customer_segment,
+      customer_features.emi_to_income_ratio
+    );
+
+    const channel = channelRouter(
+      tierResult.tier,
+      customer_features.customer_segment,
+      customer_features.geography,
+      pastOfferResponse
+    );
+
+    const message = await messageGenerator({
+      tier: tierResult.tier,
+      offer,
+      channel,
+      shapReasons: top_3_shap_reasons,
+      customerSegment: customer_features.customer_segment,
+      customerName: customer.name.split(' ')[0],
+    });
+
+    logger.info('Intervention preview generated', { customer_id, tier: tierResult.tier });
+
+    return res.status(200).json({
+      customer_id,
+      customer_name: customer.name,
+      customer_email: customer.email,
+      risk_tier: tierResult.tier,
+      urgency_score: tierResult.urgency_score,
+      tier_label: tierResult.tier_label,
+      offer: {
+        offer_type: offer.offer_type,
+        offer_description: offer.offer_description,
+        validity_days: offer.validity_days,
+        escalation_path: offer.escalation_path,
+      },
+      channel: {
+        channel: channel.channel,
+        email_type: channel.email_type,
+        priority: channel.priority,
+        best_time_to_send: channel.best_time_to_send,
+        follow_up_in_days: channel.follow_up_in_days,
+      },
+      message: {
+        subject: message.subject,
+        body: message.body,
+        word_count: message.word_count,
+        tone: message.tone,
+        email_type: message.email_type,
+      },
+      model_version,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ─────────────────────────────────────────────────────
+// POST /intervention/send
+// ─────────────────────────────────────────────────────
+router.post('/send', async (req, res, next) => {
+  try {
+    const parseResult = sendSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        issues: parseResult.error.issues,
+      });
+    }
+
+    const { customer_id, delinquency_prob, risk_tier, offer, channel, subject, body, model_version, dry_run } = parseResult.data;
+
+    const customer = await getCustomerById(customer_id);
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found', customer_id });
+    }
+
+    // Send email
+    let emailSent = false;
+    let emailDelivered = false;
+    const emailResult = await sendEmail({
+      to: customer.email,
+      subject,
+      body,
+      dryRun: dry_run,
+    });
+    emailSent = emailResult.sent;
+    emailDelivered = emailResult.delivered;
+
+    // Log to DB (skip on dry_run)
+    let interventionId = null;
+    if (!dry_run) {
+      try {
+        interventionId = await insertIntervention({
+          customer_id,
+          risk_tier,
+          delinquency_prob,
+          offer_type: offer.offer_type,
+          channel: channel.channel,
+          email_type: channel.email_type,
+          message_sent: body,
+          email_subject: subject,
+          model_version,
+          dry_run,
+        });
+
+        if (emailDelivered) {
+          await updateEmailDelivered(interventionId);
+        }
+      } catch (dbErr) {
+        logger.error('DB write failed for intervention', {
+          error: dbErr.message,
+          customer_id,
+        });
+      }
+    }
+
+    logger.info('Intervention sent', {
+      customer_id,
+      risk_tier,
+      email_sent: emailSent,
+      intervention_id: interventionId,
+      dry_run,
+    });
+
+    return res.status(200).json({
+      customer_id,
+      intervention_id: interventionId,
+      risk_tier,
+      offer,
+      channel,
+      message: { subject, body },
       email_sent: emailSent,
       email_delivered: emailDelivered,
       dry_run,

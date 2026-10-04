@@ -252,31 +252,12 @@ async def predict_with_feast(customer_id: str):
             top_reasons=shap_result["top_reasons"],
         )
 
-        # ── Call Intervention Engine for at-risk customers ────────────────
-        if probabilities and probabilities.get("delinquency", 0) > 0.20:
-            # Extract customer features from the Feast feature vector
-            feat_df = get_customer_features(customer_id)
-            emi_ratio = float(feat_df["emi_to_income_ratio"].iloc[0]) if "emi_to_income_ratio" in feat_df.columns else 0.0
+        # ── Intervention Engine ────────────────────────────────────────
+        # Auto-trigger is disabled; employees use the manual
+        # preview → edit → send flow from the frontend instead.
+        # if probabilities and probabilities.get("delinquency", 0) > 0.20:
+        #     ...call_intervention_engine(...)
 
-            # Determine segment and geography from one-hot features
-            segment = "salaried"  # default
-            if "customer_segment_self_employed" in feat_df.columns and feat_df["customer_segment_self_employed"].iloc[0] == 1:
-                segment = "self_employed"
-
-            geo = "urban"  # default
-            if "geography_rural" in feat_df.columns and feat_df["geography_rural"].iloc[0] == 1:
-                geo = "rural"
-            elif "geography_tier2" in feat_df.columns and feat_df["geography_tier2"].iloc[0] == 1:
-                geo = "tier2"
-
-            await call_intervention_engine(
-                customer_id=customer_id,
-                prob_delinquency=probabilities["delinquency"],
-                shap_top3=shap_result["top_reasons"],
-                customer_segment=segment,
-                geography=geo,
-                emi_to_income_ratio=emi_ratio,
-            )
 
         return {
             "customer_id": customer_id,
@@ -346,16 +327,11 @@ async def predict(
             top_reasons=shap_result["top_reasons"],
         )
 
-        # ── Call Intervention Engine for at-risk customers ────────────────
-        if probabilities and probabilities.get("delinquency", 0) > 0.20:
-            await call_intervention_engine(
-                customer_id=req.customer_id,
-                prob_delinquency=probabilities["delinquency"],
-                shap_top3=shap_result["top_reasons"],
-                customer_segment=req.customer_segment,
-                geography=req.geography,
-                emi_to_income_ratio=float(req.emi_to_income_ratio),
-            )
+        # ── Intervention Engine ────────────────────────────────────────
+        # Auto-trigger is disabled; employees use the manual
+        # preview → edit → send flow from the frontend instead.
+        # if probabilities and probabilities.get("delinquency", 0) > 0.20:
+        #     ...call_intervention_engine(...)
 
         return {
             "customer_id": req.customer_id,
@@ -432,6 +408,107 @@ async def simulation_start():
 
 # ── Customer Lookup routes ───────────────────────────────────────────────────
 
+@app.get("/customers/at-risk")
+async def get_at_risk_customers(
+    limit: int = 50,
+    offset: int = 0,
+    min_prob: float = 0.20,
+    employee: EmployeeInDB = Depends(
+        require_role("admin", "risk_analyst", "relationship_manager")
+    ),
+):
+    """
+    Batch-predict delinquency probability for all customers and return
+    those above min_prob, sorted by risk (highest first).
+    Includes customer name, segment, credit score, last intervention info.
+    """
+    import numpy as np
+    from app.utils import EXPECTED_FEATURES
+    from employee_auth.db.pool import _pool
+
+    feature_cols = ", ".join(f"cf.{f}" for f in EXPECTED_FEATURES)
+
+    sql = f"""
+        SELECT cf.customer_id, c.name, c.segment, c.geography,
+               c.credit_score AS cust_credit_score, c.email, c.phone_number,
+               {feature_cols},
+               il.last_intervention_at, il.last_risk_tier
+        FROM (
+            SELECT DISTINCT ON (customer_id) customer_id,
+                   {", ".join(EXPECTED_FEATURES)}
+            FROM customer_features
+            ORDER BY customer_id, event_timestamp DESC
+        ) cf
+        JOIN customers c ON c.customer_id = cf.customer_id
+        LEFT JOIN LATERAL (
+            SELECT triggered_at AS last_intervention_at,
+                   risk_tier AS last_risk_tier
+            FROM intervention_log
+            WHERE customer_id = cf.customer_id AND dry_run = false
+            ORDER BY triggered_at DESC
+            LIMIT 1
+        ) il ON true
+        ORDER BY cf.customer_id
+    """
+
+    try:
+        async with _pool.acquire() as conn:
+            rows = await conn.fetch(sql)
+
+        if not rows:
+            return {"customers": [], "total": 0, "limit": limit, "offset": offset}
+
+        # Build feature matrix for batch prediction
+        import pandas as pd
+        records = []
+        meta = []
+        for r in rows:
+            feat_dict = {f: float(r[f]) if r[f] is not None else 0.0 for f in EXPECTED_FEATURES}
+            records.append(feat_dict)
+            meta.append({
+                "customer_id": r["customer_id"],
+                "name": r["name"],
+                "segment": r["segment"],
+                "geography": r["geography"],
+                "credit_score": r["cust_credit_score"],
+                "email": r["email"],
+                "phone_number": r["phone_number"],
+                "last_intervention_at": r["last_intervention_at"].isoformat() if r["last_intervention_at"] else None,
+                "last_risk_tier": r["last_risk_tier"],
+            })
+
+        df = pd.DataFrame(records, columns=EXPECTED_FEATURES).fillna(0.0).astype(float)
+
+        # Batch prediction
+        probas = model.predict_proba(df)
+        delinquency_probs = probas[:, 1].tolist()
+
+        # Filter and sort
+        results = []
+        for i, prob in enumerate(delinquency_probs):
+            if prob >= min_prob:
+                tier = "critical" if prob >= 0.75 else "high" if prob >= 0.50 else "moderate" if prob >= 0.30 else "early_warning"
+                results.append({
+                    **meta[i],
+                    "delinquency_prob": round(prob, 4),
+                    "risk_tier": tier,
+                })
+
+        results.sort(key=lambda x: x["delinquency_prob"], reverse=True)
+        total = len(results)
+
+        return {
+            "customers": results[offset: offset + limit],
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
+
+    except Exception as exc:
+        logger.error(f"At-risk scan failed: {exc}")
+        raise HTTPException(status_code=500, detail=f"At-risk scan failed: {exc}")
+
+
 @app.get("/customers/search")
 async def search_customers(
     q: str = "",
@@ -502,6 +579,84 @@ async def get_customer_detail(
 # ── Intervention Engine proxy routes ─────────────────────────────────────────
 # These forward requests from FastAPI (port 8000) to the Node.js
 # Intervention Engine (port 3001) so frontends only need one API gateway.
+
+@app.post("/intervention/trigger")
+async def proxy_intervention_trigger(
+    request_body: dict,
+    employee: EmployeeInDB = Depends(
+        require_role("admin", "relationship_manager")
+    ),
+):
+    """
+    Manually trigger an intervention for a customer.
+    Proxied to the Intervention Engine.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{INTERVENTION_SERVICE_URL}/intervention/trigger",
+                json=request_body,
+                timeout=30.0,
+            )
+            return resp.json()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Intervention Engine unreachable: {exc}"
+        )
+
+
+@app.post("/intervention/preview")
+async def proxy_intervention_preview(
+    request_body: dict,
+    employee: EmployeeInDB = Depends(
+        require_role("admin", "relationship_manager")
+    ),
+):
+    """
+    Generate an AI intervention preview without sending email or logging.
+    Proxied to the Intervention Engine.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{INTERVENTION_SERVICE_URL}/intervention/preview",
+                json=request_body,
+                timeout=30.0,
+            )
+            return resp.json()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Intervention Engine unreachable: {exc}"
+        )
+
+
+@app.post("/intervention/send")
+async def proxy_intervention_send(
+    request_body: dict,
+    employee: EmployeeInDB = Depends(
+        require_role("admin", "relationship_manager")
+    ),
+):
+    """
+    Send a reviewed/edited intervention email and log the intervention.
+    Proxied to the Intervention Engine.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{INTERVENTION_SERVICE_URL}/intervention/send",
+                json=request_body,
+                timeout=30.0,
+            )
+            return resp.json()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Intervention Engine unreachable: {exc}"
+        )
+
 
 @app.post("/intervention/outcome")
 async def proxy_intervention_outcome(

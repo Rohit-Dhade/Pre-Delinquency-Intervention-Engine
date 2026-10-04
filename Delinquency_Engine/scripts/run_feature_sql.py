@@ -14,14 +14,23 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DB_USER = os.getenv("POSTGRES_USER", "rohit")
-DB_PASS = os.getenv("POSTGRES_PASSWORD", "@sy2026")
-DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
-DB_PORT = os.getenv("POSTGRES_PORT", "5432")
-DB_NAME = os.getenv("POSTGRES_DB", "delinquency_db")
-import urllib.parse
-DB_PASS_ENCODED = urllib.parse.quote_plus(DB_PASS)
-DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS_ENCODED}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+env_db_url = os.getenv("DATABASE_URL")
+if env_db_url:
+    if env_db_url.startswith("postgres://"):
+        DATABASE_URL = env_db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif env_db_url.startswith("postgresql://"):
+        DATABASE_URL = env_db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    else:
+        DATABASE_URL = env_db_url
+else:
+    DB_USER = os.getenv("POSTGRES_USER", "rohit")
+    DB_PASS = os.getenv("POSTGRES_PASSWORD", "@sy2026")
+    DB_HOST = os.getenv("POSTGRES_HOST", "localhost")
+    DB_PORT = os.getenv("POSTGRES_PORT", "5432")
+    DB_NAME = os.getenv("POSTGRES_DB", "delinquency_db")
+    import urllib.parse
+    DB_PASS_ENCODED = urllib.parse.quote_plus(DB_PASS)
+    DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS_ENCODED}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FEATURE_SQL_PATH = PROJECT_ROOT / "scripts" / "feature_sql.sql"
